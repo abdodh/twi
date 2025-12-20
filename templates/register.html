@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <i class="fab fa-twitter text-blue-500 text-4xl mx-auto block text-center"></i>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            إنشاء حساب جديد
+        </h2>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <form class="space-y-6" @submit.prevent="register">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">
+                        اسم المستخدم
+                    </label>
+                    <div class="mt-1">
+                        <input id="username" v-model="form.username" type="text" required
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">
+                        البريد الإلكتروني
+                    </label>
+                    <div class="mt-1">
+                        <input id="email" v-model="form.email" type="email" required
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password1" class="block text-sm font-medium text-gray-700">
+                        كلمة المرور
+                    </label>
+                    <div class="mt-1">
+                        <input id="password1" v-model="form.password1" type="password" required
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password2" class="block text-sm font-medium text-gray-700">
+                        تأكيد كلمة المرور
+                    </label>
+                    <div class="mt-1">
+                        <input id="password2" v-model="form.password2" type="password" required
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700">
+                        الاسم الأول
+                    </label>
+                    <div class="mt-1">
+                        <input id="first_name" v-model="form.first_name" type="text"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700">
+                        الاسم الأخير
+                    </label>
+                    <div class="mt-1">
+                        <input id="last_name" v-model="form.last_name" type="text"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div v-if="errors.length > 0" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <ul>
+                        <li v-for="error in errors" :key="error">[[ error ]]</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        إنشاء الحساب
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">أو</span>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <p class="text-center text-sm text-gray-600">
+                        لديك حساب بالفعل؟
+                        <a href="/login/" class="font-medium text-blue-600 hover:text-blue-500 mr-1">
+                            سجل الدخول
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+new Vue({
+    el: '#app',
+    delimiters: ['[[', ']]'],
+    data: {
+        form: {
+            username: '',
+            email: '',
+            password1: '',
+            password2: '',
+            first_name: '',
+            last_name: ''
+        },
+        errors: []
+    },
+    methods: {
+        async register() {
+            this.errors = [];
+            
+            if (this.form.password1 !== this.form.password2) {
+                this.errors.push('كلمات المرور غير متطابقة');
+                return;
+            }
+            
+            try {
+                const response = await axios.post('/api/register/', this.form);
+                
+                if (response.data.status === 'success') {
+                    window.location.href = '/';
+                } else if (response.data.errors) {
+                    for (const field in response.data.errors) {
+                        this.errors.push(...response.data.errors[field]);
+                    }
+                }
+            } catch (error) {
+                this.errors.push('حدث خطأ أثناء إنشاء الحساب');
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

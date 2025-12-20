@@ -1,0 +1,752 @@
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سوسيال - الرئيسية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        [dir="rtl"] { text-align: right; }
+        .hover-scale:hover { transform: scale(1.05); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  
+
+
+
+    <!-- شريط التنقل -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <!-- الشعار -->
+                <div class="flex items-center space-x-4">
+                    <i class="fab fa-twitter text-blue-500 text-2xl"></i>
+                    <span class="font-bold text-lg hidden md:inline"> سوسيال</span>
+                </div>
+
+                <!-- القائمة الرئيسية -->
+                <div class="hidden md:flex items-center space-x-6 space-x-reverse">
+                    <a href="{% url 'home' %}" class="text-blue-500 font-bold border-b-2 border-blue-500 px-3 py-2">
+                        <i class="fas fa-home ml-2"></i> الرئيسية
+                    </a>
+                    <a href="{% url 'profile_with_username' user.username %}" class="text-gray-600 hover:text-blue-500 px-3 py-2">
+                        <i class="fas fa-user ml-2"></i> الملف الشخصي
+                    </a>
+                    <a href="{% url 'profile_settings' %}" class="text-gray-600 hover:text-blue-500 px-3 py-2">
+                        <i class="fas fa-cog ml-2"></i> الإعدادات
+                    </a>
+                </div>
+
+                <!-- المستخدم وزر الخروج -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" 
+                                 class="h-8 w-8 rounded-full object-cover border-2 border-blue-500">
+                        {% else %}
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-500">
+                                <i class="fas fa-user text-blue-500"></i>
+                            </div>
+                        {% endif %}
+                        <span class="mr-2 text-sm font-medium hidden md:inline">@{{ user.username }}</span>
+                    </div>
+                    
+                    <form method="POST" action="{% url 'logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-1 px-3 rounded-full transition">
+                            <i class="fas fa-sign-out-alt ml-1"></i> خروج
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- الرسائل -->
+    {% if messages %}
+    <div class="max-w-2xl mx-auto mt-4 px-4">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700
+                    {% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700
+                    {% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} 
+                    border px-4 py-3 rounded-lg mb-2 shadow-sm">
+            <div class="flex justify-between items-center">
+                <span>{{ message }}</span>
+                <button onclick="this.parentElement.parentElement.remove()" 
+                        class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- المحتوى الرئيسي -->
+    <main class="max-w-7xl mx-auto py-6 px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- الشريط الجانبي الأيسر -->
+            <div class="lg:col-span-1">
+                <!-- بطاقة المستخدم -->
+                <div class="bg-white rounded-xl shadow-lg p-5 mb-6 sticky top-24">
+                    <div class="text-center">
+                        <!-- صورة الملف الشخصي -->
+                        <div class="relative inline-block mb-4">
+                            {% if user.profile_image %}
+                                <img src="{{ user.profile_image.url }}" 
+                                     class="h-24 w-24 rounded-full object-cover border-4 border-white shadow-lg">
+                            {% else %}
+                                <div class="h-24 w-24 rounded-full border-4 border-white bg-gradient-to-r from-blue-400 to-purple-500 shadow-lg flex items-center justify-center">
+                                    <i class="fas fa-user text-white text-3xl"></i>
+                                </div>
+                            {% endif %}
+                            <div class="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+
+                        <!-- معلومات المستخدم -->
+                        <h3 class="font-bold text-lg text-gray-800">@{{ user.username }}</h3>
+                        {% if user.first_name or user.last_name %}
+                        <p class="text-gray-600 text-sm">{{ user.first_name }} {{ user.last_name }}</p>
+                        {% endif %}
+                        
+                        {% if user.bio %}
+                        <p class="text-gray-500 text-sm mt-2">{{ user.bio|truncatechars:60 }}</p>
+                        {% endif %}
+
+                        <!-- الإحصائيات -->
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <div class="text-center p-2 bg-blue-50 rounded-lg">
+                                <p class="font-bold text-blue-700">{{ user_stats.posts_count|default:"0" }}</p>
+                                <p class="text-xs text-gray-600">منشور</p>
+                            </div>
+                            <div class="text-center p-2 bg-green-50 rounded-lg">
+                                <p class="font-bold text-green-700">{{ user_stats.following_count|default:"0" }}</p>
+                                <p class="text-xs text-gray-600">متابَع</p>
+                            </div>
+                            <div class="text-center p-2 bg-purple-50 rounded-lg">
+                                <p class="font-bold text-purple-700">{{ user_stats.followers_count|default:"0" }}</p>
+                                <p class="text-xs text-gray-600">متابِع</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الأزرار -->
+                    <div class="mt-6 space-y-3">
+                        <a href="{% url 'profile_with_username' user.username %}" 
+                           class="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full text-center transition hover-scale">
+                            <i class="fas fa-eye ml-2"></i> عرض الملف
+                        </a>
+                        <a href="{% url 'profile_settings' %}" 
+                           class="block w-full bg-white border border-blue-500 text-blue-500 hover:bg-blue-50 font-bold py-2 px-4 rounded-full text-center transition hover-scale">
+                            <i class="fas fa-edit ml-2"></i> تعديل الملف
+                        </a>
+                    </div>
+                </div>
+
+                <!-- الاتجاهات -->
+                <div class="bg-white rounded-xl shadow-lg p-5">
+                    <h4 class="font-bold text-lg mb-4 text-gray-800">
+                        <i class="fas fa-hashtag text-blue-500 ml-2"></i> الاتجاهات
+                    </h4>
+                    <div class="space-y-3">
+                        {% for trend in trends|slice:":5" %}
+                        <a href="#" class="block p-3 hover:bg-gray-50 rounded-lg transition">
+                            <p class="font-bold text-blue-600">#{{ trend.name }}</p>
+                            <p class="text-gray-500 text-sm">{{ trend.count }} تغريدة</p>
+                        </a>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-hashtag text-gray-300 text-2xl mb-2"></i>
+                            <p class="text-gray-500 text-sm">لا توجد اتجاهات حالياً</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- المحتوى المركزي -->
+            <div class="lg:col-span-2">
+                <!-- إنشاء منشور جديد -->
+                <div class="bg-white rounded-xl shadow-lg p-5 mb-6 fade-in">
+                    <div class="flex items-start">
+                        {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" 
+                                 class="h-12 w-12 rounded-full object-cover border-2 border-blue-500">
+                        {% else %}
+                            <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-500">
+                                <i class="fas fa-user text-blue-500"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="flex-1 mr-3">
+                            <form method="POST" action="{% url 'create_post' %}" enctype="multipart/form-data" id="postForm">
+                                {% csrf_token %}
+                                <textarea name="content" 
+                                          placeholder="ما الذي يدور في ذهنك؟"
+                                          rows="3"
+                                          class="w-full px-4 py-3 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
+                                          required></textarea>
+                                
+                                <!-- معاينة الوسائط -->
+                                <div id="mediaPreview" class="mt-3 hidden">
+                                    <div class="relative inline-block">
+                                        <img id="imagePreview" class="max-w-full h-48 rounded-lg object-cover">
+                                        <button type="button" onclick="removeMedia()" 
+                                                class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- أدوات الوسائط -->
+                                <div class="flex justify-between items-center mt-4 pt-4 border-t">
+                                    <div class="flex space-x-3">
+                                        <label class="cursor-pointer text-green-500 hover:text-green-600 transition">
+                                            <i class="fas fa-image text-lg"></i>
+                                            <input type="file" name="image" accept="image/*" class="hidden" 
+                                                   onchange="previewImage(this)" id="imageInput">
+                                        </label>
+                                        <label class="cursor-pointer text-purple-500 hover:text-purple-600 transition">
+                                            <i class="fas fa-video text-lg"></i>
+                                            <input type="file" name="video" accept="video/*" class="hidden" 
+                                                   onchange="previewVideo(this)" id="videoInput">
+                                        </label>
+                                        <button type="button" class="text-yellow-500 hover:text-yellow-600">
+                                            <i class="fas fa-smile text-lg"></i>
+                                        </button>
+                                    </div>
+
+                                    <button type="submit" 
+                                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition hover-scale disabled:opacity-50 disabled:cursor-not-allowed"
+                                            id="submitBtn">
+                                        <i class="fas fa-paper-plane ml-2"></i> نشر
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- قائمة المنشورات -->
+                <div id="postsContainer">
+                    {% if posts %}
+                        {% for post in posts %}
+                        <div class="bg-white rounded-xl shadow-lg p-5 mb-6 fade-in">
+                            <!-- رأس المنشور -->
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center">
+                                    <!-- صورة المستخدم -->
+                                    <a href="{% url 'profile_with_username' post.user.username %}">
+                                        {% if post.user.profile_image %}
+                                            <img src="{{ post.user.profile_image.url }}" 
+                                                 class="h-10 w-10 rounded-full object-cover border-2 border-blue-500">
+                                        {% else %}
+                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-500">
+                                                <i class="fas fa-user text-blue-500"></i>
+                                            </div>
+                                        {% endif %}
+                                    </a>
+                                    
+                                    <!-- معلومات المستخدم -->
+                                    <div class="mr-3">
+                                        <a href="{% url 'profile_with_username' post.user.username %}" 
+                                           class="font-bold text-gray-800 hover:text-blue-500 block">
+                                            @{{ post.user.username }}
+                                        </a>
+                                        <div class="flex items-center text-gray-500 text-sm">
+                                            <span>{{ post.created_at|timesince }}</span>
+                                            {% if post.is_edited %}
+                                            <span class="mr-2">• تم التعديل</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- قائمة الإجراءات -->
+                                {% if post.user == user or user.is_staff %}
+                                <div class="relative">
+                                    <button onclick="togglePostActions({{ post.id }})" 
+                                            class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    
+                                    <div id="postActions{{ post.id }}" 
+                                         class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border py-2 z-10 hidden">
+                                        {% if post.user == user %}
+                                        <a href="{% url 'edit_post' post.id %}" 
+                                           class="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                            <i class="fas fa-edit ml-2"></i> تعديل
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if post.user == user or user.is_staff %}
+                                        <a href="{% url 'delete_post' post.id %}" 
+                                           class="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                           onclick="return confirm('هل أنت متأكد من حذف هذه التغريدة؟')">
+                                            <i class="fas fa-trash ml-2"></i> حذف
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'post_detail' post.id %}" 
+                                           class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600">
+                                            <i class="fas fa-external-link-alt ml-2"></i> عرض التفاصيل
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- محتوى المنشور -->
+                            <div class="mb-4">
+                                <p class="text-gray-800 text-lg leading-relaxed">{{ post.content }}</p>
+                            </div>
+
+                            <!-- الوسائط -->
+                            {% if post.image %}
+                            <div class="mb-4">
+                                <img src="{{ post.image.url }}" 
+                                     class="w-full max-h-96 object-cover rounded-lg shadow">
+                            </div>
+                            {% endif %}
+                            
+                            {% if post.video %}
+                            <div class="mb-4">
+                                <video controls class="w-full max-h-96 object-cover rounded-lg shadow">
+                                    <source src="{{ post.video.url }}" type="video/mp4">
+                                </video>
+                            </div>
+                            {% endif %}
+
+                            <!-- إحصائيات المنشور -->
+                            <div class="flex items-center justify-between text-gray-500 text-sm mb-4">
+                                <div class="flex items-center space-x-6 space-x-reverse">
+                                    <span>
+                                        <i class="fas fa-heart ml-1"></i>
+                                        {{ post.likes_count }} إعجاب
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-comment ml-1"></i>
+                                        {{ post.comments_count }} تعليق
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-share ml-1"></i>
+                                        {{ post.shares_count }} مشاركة
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- أزرار التفاعل -->
+                            <div class="flex border-t pt-4">
+                                <!-- زر الإعجاب -->
+                                <form method="POST" action="{% url 'like_post' post.id %}" 
+                                      class="like-form flex-1 text-center">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="flex items-center justify-center w-full text-gray-600 hover:text-red-500 py-2 rounded-lg hover:bg-red-50 transition">
+                                        <i class="{% if post.user_has_liked %}fas text-red-500{% else %}far{% endif %} fa-heart text-lg ml-2"></i>
+                                        <span>إعجاب</span>
+                                    </button>
+                                </form>
+                                
+                                <!-- زر التعليق -->
+                                <button onclick="toggleComments({{ post.id }})" 
+                                        class="flex-1 text-center text-gray-600 hover:text-blue-500 py-2 rounded-lg hover:bg-blue-50 transition">
+                                    <i class="far fa-comment text-lg ml-2"></i>
+                                    <span>تعليق</span>
+                                </button>
+                                
+                                <!-- زر المشاركة -->
+                                <button class="flex-1 text-center text-gray-600 hover:text-green-500 py-2 rounded-lg hover:bg-green-50 transition">
+                                    <i class="fas fa-retweet text-lg ml-2"></i>
+                                    <span>مشاركة</span>
+                                </button>
+                            </div>
+
+                            <!-- قسم التعليقات -->
+                            <div id="comments{{ post.id }}" class="mt-4 pt-4 border-t hidden">
+                                <!-- نموذج إضافة تعليق -->
+                                <form method="POST" action="{% url 'add_comment' post.id %}" 
+                                      class="mb-4 comment-form">
+                                    {% csrf_token %}
+                                    <div class="flex">
+                                        {% if user.profile_image %}
+                                            <img src="{{ user.profile_image.url }}" 
+                                                 class="h-8 w-8 rounded-full object-cover">
+                                        {% else %}
+                                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <i class="fas fa-user text-blue-500 text-sm"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="flex-1 mr-2">
+                                            <textarea name="content" 
+                                                      placeholder="اكتب تعليقاً..."
+                                                      rows="1"
+                                                      class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500 resize-none comment-input"></textarea>
+                                            <div class="flex justify-end mt-2">
+                                                <button type="submit" 
+                                                        class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold py-1 px-4 rounded-full">
+                                                    نشر
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+
+                                <!-- قائمة التعليقات -->
+                                <div class="space-y-4">
+                                    {% for comment in post.comments|slice:":3" %}
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        <div class="flex">
+                                            <a href="{% url 'profile_with_username' comment.user.username %}">
+                                                {% if comment.user.profile_image %}
+                                                    <img src="{{ comment.user.profile_image.url }}" 
+                                                         class="h-6 w-6 rounded-full object-cover">
+                                                {% else %}
+                                                    <div class="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="fas fa-user text-blue-500 text-xs"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </a>
+                                            
+                                            <div class="mr-2 flex-1">
+                                                <div class="flex justify-between">
+                                                    <a href="{% url 'profile_with_username' comment.user.username %}" 
+                                                       class="font-bold text-sm text-gray-800 hover:text-blue-500">
+                                                        @{{ comment.user.username }}
+                                                    </a>
+                                                    <span class="text-gray-500 text-xs">{{ comment.created_at|timesince }}</span>
+                                                </div>
+                                                <p class="text-sm text-gray-700 mt-1">{{ comment.content }}</p>
+                                                
+                                                <!-- إجراءات التعليق -->
+                                                <div class="flex space-x-4 mt-2 text-xs text-gray-500">
+                                                    <form method="POST" action="{% url 'like_comment' comment.id %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="hover:text-red-500">
+                                                            <i class="{% if comment.user_has_liked %}fas text-red-500{% else %}far{% endif %} fa-heart"></i>
+                                                            {{ comment.likes_count }}
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <button onclick="toggleReply({{ comment.id }})" class="hover:text-blue-500">
+                                                        رد
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <p class="text-gray-500 text-sm text-center">لا توجد تعليقات بعد</p>
+                                    {% endfor %}
+                                    
+                                    {% if post.comments_count > 3 %}
+                                    <div class="text-center">
+                                        <a href="{% url 'post_detail' post.id %}" 
+                                           class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+                                            عرض جميع التعليقات ({{ post.comments_count }})
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- حالة عدم وجود منشورات -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                            <div class="max-w-md mx-auto">
+                                <i class="fas fa-feather-alt text-gray-300 text-5xl mb-4"></i>
+                                <h3 class="text-xl font-bold text-gray-700 mb-2">لا توجد تغريدات بعد</h3>
+                                <p class="text-gray-500 mb-6">كن أول من ينشر تغريدة وشارك أفكارك مع الآخرين</p>
+                                <button onclick="document.getElementById('postForm').scrollIntoView({behavior: 'smooth'})" 
+                                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition hover-scale">
+                                    <i class="fas fa-pen ml-2"></i> ابدأ التغريد
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- الشريط الجانبي الأيمن -->
+            <div class="lg:col-span-1">
+                <!-- اقتراحات المتابعة -->
+                <div class="bg-white rounded-xl shadow-lg p-5 mb-6">
+                    <h4 class="font-bold text-lg mb-4 text-gray-800">
+                        <i class="fas fa-user-plus text-blue-500 ml-2"></i> قد يعجبك
+                    </h4>
+                    <div class="space-y-4">
+                        {% for suggested_user in suggested_users|slice:":5" %}
+                        <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition">
+                            <div class="flex items-center">
+                                {% if suggested_user.profile_image %}
+                                    <img src="{{ suggested_user.profile_image.url }}" 
+                                         class="h-10 w-10 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-500"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="mr-3">
+                                    <p class="font-bold text-sm">@{{ suggested_user.username }}</p>
+                                    <p class="text-gray-500 text-xs">{{ suggested_user.first_name }} {{ suggested_user.last_name }}</p>
+                                </div>
+                            </div>
+                            <button class="text-blue-500 hover:text-blue-600 text-sm font-bold">
+                                متابعة
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users text-gray-300 text-2xl mb-2"></i>
+                            <p class="text-gray-500 text-sm">لا توجد اقتراحات حالياً</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- معلومات الموقع -->
+                <div class="bg-white rounded-xl shadow-lg p-5">
+                    <div class="space-y-4">
+                        <div>
+                            <h5 class="font-bold text-gray-800 mb-2">تويتر كلون</h5>
+                            <p class="text-gray-600 text-sm">
+                                منصة اجتماعية للتواصل ومشاركة الأفكار مع العالم
+                            </p>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <a href="#" class="block text-gray-600 hover:text-blue-500 text-sm">
+                                <i class="fas fa-info-circle ml-2"></i> عن الموقع
+                            </a>
+                            <a href="#" class="block text-gray-600 hover:text-blue-500 text-sm">
+                                <i class="fas fa-shield-alt ml-2"></i> الخصوصية
+                            </a>
+                            <a href="#" class="block text-gray-600 hover:text-blue-500 text-sm">
+                                <i class="fas fa-file-alt ml-2"></i> الشروط
+                            </a>
+                        </div>
+                        
+                        <div class="pt-4 border-t">
+                            <p class="text-gray-500 text-xs">
+                                © 2023 تويتر كلون. جميع الحقوق محفوظة.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+    // معاينة الصورة
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const preview = document.getElementById('imagePreview');
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                document.getElementById('mediaPreview').classList.remove('hidden');
+                document.getElementById('videoInput').value = '';
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // معاينة الفيديو
+    function previewVideo(input) {
+        if (input.files && input.files[0]) {
+            const preview = document.getElementById('imagePreview');
+            const url = URL.createObjectURL(input.files[0]);
+            
+            preview.src = url;
+            document.getElementById('mediaPreview').classList.remove('hidden');
+            document.getElementById('imageInput').value = '';
+        }
+    }
+
+    // إزالة الوسائط
+    function removeMedia() {
+        document.getElementById('mediaPreview').classList.add('hidden');
+        document.getElementById('imageInput').value = '';
+        document.getElementById('videoInput').value = '';
+    }
+
+    // تبديل قائمة إجراءات المنشور
+    function togglePostActions(postId) {
+        const actions = document.getElementById(`postActions${postId}`);
+        actions.classList.toggle('hidden');
+        
+        // إغلاق القوائم الأخرى
+        document.querySelectorAll('[id^="postActions"]').forEach(el => {
+            if (el.id !== `postActions${postId}`) {
+                el.classList.add('hidden');
+            }
+        });
+    }
+
+    // تبديل قسم التعليقات
+    function toggleComments(postId) {
+        const comments = document.getElementById(`comments${postId}`);
+        comments.classList.toggle('hidden');
+    }
+
+    // تبديل نموذج الرد
+    function toggleReply(commentId) {
+        const replyForm = document.getElementById(`replyForm${commentId}`);
+        if (!replyForm) {
+            const commentDiv = document.querySelector(`[data-comment="${commentId}"]`);
+            if (commentDiv) {
+                const formHTML = `
+                    <form method="POST" action="/comment/${commentId}/reply/" class="mt-2">
+                        <div class="flex">
+                            <div class="flex-1 mr-2">
+                                <textarea name="content" rows="1" 
+                                          class="w-full px-3 py-1 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                                          placeholder="اكتب رداً..."></textarea>
+                                <div class="flex justify-end mt-1">
+                                    <button type="submit" 
+                                            class="bg-gray-500 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded-full">
+                                        نشر الرد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                `;
+                commentDiv.insertAdjacentHTML('beforeend', formHTML);
+            }
+        } else {
+            replyForm.classList.toggle('hidden');
+        }
+    }
+
+    // AJAX للإعجابات
+    document.addEventListener('DOMContentLoaded', function() {
+        // إعجابات المنشورات
+        document.querySelectorAll('.like-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const button = this.querySelector('button');
+                const icon = button.querySelector('i');
+                const postId = this.action.split('/')[4];
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // تحديث عدد الإعجابات
+                        const likeCount = button.closest('.like-form').previousElementSibling;
+                        if (likeCount) {
+                            const likeSpan = likeCount.querySelector('span');
+                            if (likeSpan) {
+                                const currentLikes = parseInt(likeSpan.textContent.match(/\d+/)[0]);
+                                likeSpan.textContent = likeSpan.textContent.replace(
+                                    /\d+/, data.action === 'liked' ? currentLikes + 1 : currentLikes - 1
+                                );
+                            }
+                        }
+                        
+                        // تغيير الأيقونة
+                        if (data.action === 'liked') {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas', 'text-red-500');
+                        } else {
+                            icon.classList.remove('fas', 'text-red-500');
+                            icon.classList.add('far');
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+
+        // إغلاق قوائم الإجراءات عند النقر خارجها
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[id^="postActions"]') && !e.target.closest('button[onclick*="togglePostActions"]')) {
+                document.querySelectorAll('[id^="postActions"]').forEach(el => {
+                    el.classList.add('hidden');
+                });
+            }
+        });
+
+        // التحقق من محتوى المنشور
+        const postTextarea = document.querySelector('textarea[name="content"]');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (postTextarea && submitBtn) {
+            postTextarea.addEventListener('input', function() {
+                submitBtn.disabled = this.value.trim().length === 0;
+            });
+            
+            // التحقق الأولي
+            submitBtn.disabled = postTextarea.value.trim().length === 0;
+        }
+
+        // توسيع textarea التعليقات تلقائياً
+        document.querySelectorAll('.comment-input').forEach(textarea => {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+    });
+
+    // تحميل المزيد من المنشورات (لاحقاً)
+    let isLoading = false;
+    let page = 1;
+
+    window.addEventListener('scroll', function() {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !isLoading) {
+            isLoading = true;
+            page++;
+            
+            fetch(`/api/posts/?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.posts && data.posts.length > 0) {
+                        // إضافة المنشورات الجديدة
+                        const container = document.getElementById('postsContainer');
+                        data.posts.forEach(post => {
+                            // إنشاء عنصر المنشور (يمكن تنفيذ هذا بشكل كامل)
+                            container.innerHTML += `
+                                <div class="bg-white rounded-xl shadow-lg p-5 mb-6 fade-in">
+                                    <!-- محتوى المنشور -->
+                                </div>
+                            `;
+                        });
+                    }
+                    isLoading = false;
+                })
+                .catch(error => {
+                    console.error('Error loading more posts:', error);
+                    isLoading = false;
+                });
+        }
+    });
+    </script>
+</body>
+</html>

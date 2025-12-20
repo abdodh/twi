@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}متابَعو @{{ profile_user.username }} - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- رأس الصفحة -->
+    <div class="mb-8">
+        <div class="flex items-center mb-4">
+            <a href="{% url 'profile_with_username' profile_user.username %}" 
+               class="text-blue-500 hover:text-blue-600 mr-4">
+                <i class="fas fa-arrow-right text-xl"></i>
+            </a>
+            <h1 class="text-2xl font-bold">متابَعو @{{ profile_user.username }}</h1>
+        </div>
+        <p class="text-gray-600">عدد المتابَعين: {{ following|length }}</p>
+    </div>
+    
+    <!-- قائمة المتابَعين -->
+    <div class="bg-white rounded-lg shadow">
+        {% if following %}
+            <div class="divide-y">
+                {% for follow in following %}
+                <div class="p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-center justify-between">
+                        <!-- معلومات المستخدم -->
+                        <div class="flex items-center">
+                            <a href="{% url 'profile_with_username' follow.following.username %}" 
+                               class="flex items-center">
+                                {% if follow.following.profile_image %}
+                                    <img src="{{ follow.following.profile_image.url }}" 
+                                         class="h-12 w-12 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-400 text-xl"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="mr-3">
+                                    <h3 class="font-bold hover:text-blue-500">
+                                        @{{ follow.following.username }}
+                                    </h3>
+                                    <p class="text-gray-600 text-sm">
+                                        {{ follow.following.first_name }} {{ follow.following.last_name }}
+                                    </p>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- أزرار الإجراءات -->
+                        <div class="flex space-x-2">
+                            {% if request.user != follow.following %}
+                                {% if follow.is_friend %}
+                                    <form method="POST" action="{% url 'remove_friend' follow.following.username %}"
+                                          onsubmit="return confirm('هل تريد إزالة هذا الصديق؟');">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-full">
+                                            <i class="fas fa-user-times ml-1"></i> إزالة صديق
+                                        </button>
+                                    </form>
+                                {% elif follow.has_pending_request %}
+                                    <button class="bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded-full cursor-default">
+                                        <i class="fas fa-clock ml-1"></i> قيد الانتظار
+                                    </button>
+                                {% else %}
+                                    <form method="POST" action="{% url 'send_friend_request' follow.following.username %}">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-full">
+                                            <i class="fas fa-user-plus ml-1"></i> إضافة صديق
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                
+                                <!-- زر إلغاء المتابعة -->
+                                <form method="POST" action="{% url 'toggle_follow' follow.following.username %}" 
+                                      class="follow-form">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-full">
+                                        <i class="fas fa-user-minus ml-1"></i> إلغاء المتابعة
+                                    </button>
+                                </form>
+                                
+                                <!-- زر الحظر -->
+                                <form method="POST" action="{% url 'block_user' follow.following.username %}"
+                                      onsubmit="return confirm('هل تريد حظر هذا المستخدم؟');">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-full">
+                                        <i class="fas fa-ban ml-1"></i> حظر
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- معلومات إضافية -->
+                    <div class="mt-3 mr-16 flex space-x-4 text-sm text-gray-500">
+                        <span>
+                            <i class="fas fa-calendar ml-1"></i>
+                            يتابعه منذ {{ follow.created_at|timesince }}
+                        </span>
+                        {% if follow.is_followed_back %}
+                        <span class="text-green-600">
+                            <i class="fas fa-exchange-alt ml-1"></i>
+                            يتابِعك أيضاً
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="p-8 text-center">
+                <i class="fas fa-user-plus text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600">لا يتابع أي مستخدمين بعد</p>
+                <p class="text-gray-500 text-sm mt-1">ابدأ بمتابعة مستخدمين لرؤيتهم هنا</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// AJAX لإلغاء المتابعة
+document.addEventListener('DOMContentLoaded', function() {
+    const followForms = document.querySelectorAll('.follow-form');
+    followForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // إخفاء العنصر بعد إلغاء المتابعة
+                    this.closest('.p-4').remove();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>
+{% endblock %}

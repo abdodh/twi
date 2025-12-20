@@ -1,0 +1,335 @@
+{% load static %}
+
+<div class="{% if not forloop.first %}border-t pt-4 mt-4{% endif %}">
+    <div class="flex">
+        <!-- صورة المستخدم -->
+        <a href="{% url 'profile_with_username' comment.user.username %}">
+            {% if comment.user.profile_image %}
+                <img src="{{ comment.user.profile_image.url }}" 
+                     class="h-8 w-8 rounded-full object-cover">
+            {% else %}
+                <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-user text-gray-400 text-sm"></i>
+                </div>
+            {% endif %}
+        </a>
+        
+        <!-- محتوى التعليق -->
+        <div class="mr-3 flex-1">
+            <div class="flex justify-between">
+                <div>
+                    <a href="{% url 'profile_with_username' comment.user.username %}" 
+                       class="font-bold text-sm hover:text-blue-500">
+                        @{{ comment.user.username }}
+                    </a>
+                    <span class="text-gray-500 text-xs mr-2">• {{ comment.created_at|timesince }}</span>
+                </div>
+                
+                {% if comment.user == user or user.is_staff %}
+                <div class="relative">
+                    <button onclick="toggleCommentActions({{ comment.id }})" 
+                            class="text-gray-400 hover:text-gray-600 text-xs">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    
+                    <!-- قائمة إجراءات التعليق -->
+                    <div id="comment-actions-{{ comment.id }}" 
+                         class="absolute left-0 mt-2 w-32 bg-white rounded-lg shadow-lg border py-1 z-10 hidden">
+                        {% if comment.user == user %}
+                        <button onclick="editComment({{ comment.id }})" 
+                                class="block w-full text-right px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 text-sm">
+                            <i class="fas fa-edit ml-2"></i> تعديل
+                        </button>
+                        {% endif %}
+                        
+                        <form method="POST" action="{% url 'delete_comment' comment.id %}" 
+                              class="inline-block w-full"
+                              onsubmit="return confirm('هل أنت متأكد من حذف هذا التعليق؟');">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="block w-full text-right px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-red-600 text-sm">
+                                <i class="fas fa-trash ml-2"></i> حذف
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- محتوى التعليق -->
+            <div id="comment-content-{{ comment.id }}" class="mt-1">
+                <p class="text-sm">{{ comment.content }}</p>
+                {% if comment.is_edited %}
+                <span class="text-gray-500 text-xs">(تم التعديل)</span>
+                {% endif %}
+            </div>
+            
+            <!-- نموذج تعديل التعليق (مخفي) -->
+            <div id="comment-edit-form-{{ comment.id }}" class="mt-2 hidden">
+                <form method="POST" action="{% url 'edit_comment' comment.id %}" class="comment-edit-form">
+                    {% csrf_token %}
+                    <textarea name="content" rows="2" 
+                              class="w-full px-3 py-1 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                              required>{{ comment.content }}</textarea>
+                    <div class="flex justify-end space-x-2 mt-1">
+                        <button type="button" onclick="cancelEditComment({{ comment.id }})" 
+                                class="text-gray-600 hover:text-gray-800 text-xs">
+                            إلغاء
+                        </button>
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded">
+                            حفظ
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- إجراءات التعليق -->
+            <div class="flex space-x-4 mt-2 text-xs text-gray-500">
+                <!-- زر إعجاب التعليق -->
+                <form method="POST" action="{% url 'like_comment' comment.id %}" class="like-comment-form">
+                    {% csrf_token %}
+                    <button type="submit" class="flex items-center hover:text-red-500">
+                        <i class="{% if comment.user_has_liked %}fas text-red-500{% else %}far{% endif %} fa-heart"></i>
+                        <span class="mr-1">{{ comment.likes_count }}</span>
+                    </button>
+                </form>
+                
+                <!-- زر الرد -->
+                <button onclick="toggleReply({{ comment.id }})" class="hover:text-blue-500">
+                    <i class="fas fa-reply ml-1"></i> رد
+                </button>
+                
+                <!-- زر مشاهدات الإعجابات -->
+                <a href="{% url 'comment_likes' comment.id %}" class="hover:text-green-500">
+                    <i class="fas fa-users ml-1"></i> المعجبين
+                </a>
+            </div>
+            
+            <!-- نموذج الرد -->
+            <div id="reply-{{ comment.id }}" class="mt-3 hidden comment-reply mr-3">
+                <form method="POST" action="{% url 'reply_comment' comment.id %}" class="reply-form">
+                    {% csrf_token %}
+                    <div class="flex">
+                        {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" 
+                                 class="h-6 w-6 rounded-full object-cover">
+                        {% else %}
+                            <div class="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-400 text-xs"></i>
+                            </div>
+                        {% endif %}
+                        <div class="mr-2 flex-1">
+                            <textarea name="content" 
+                                      placeholder="أكتب رداً..."
+                                      rows="1"
+                                      class="w-full px-3 py-1 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500 text-sm"></textarea>
+                            <div class="flex justify-end space-x-2 mt-1">
+                                <button type="button" onclick="toggleReply({{ comment.id }})" 
+                                        class="text-gray-600 hover:text-gray-800 text-xs">
+                                    إلغاء
+                                </button>
+                                <button type="submit" 
+                                        class="bg-gray-500 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded-full">
+                                    رد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- عرض الردود -->
+            {% if comment.replies_count > 0 or comment.replies %}
+            <div class="mt-3 mr-6">
+                <button onclick="toggleReplies({{ comment.id }})" 
+                        class="text-xs text-blue-500 hover:text-blue-600 flex items-center">
+                    <i class="fas fa-comments ml-2"></i>
+                    <span id="replies-count-{{ comment.id }}">
+                        {% if comment.replies_count %}
+                            {{ comment.replies_count }} رد
+                        {% elif comment.replies %}
+                            {{ comment.replies|length }} رد
+                        {% endif %}
+                    </span>
+                </button>
+                
+                <!-- قائمة الردود -->
+                <div id="replies-{{ comment.id }}" class="mt-2 space-y-2 hidden">
+                    {% for reply in comment.replies %}
+                    <div class="border-r-2 border-gray-200 pr-3">
+                        <div class="flex">
+                            <a href="{% url 'profile_with_username' reply.user.username %}">
+                                {% if reply.user.profile_image %}
+                                    <img src="{{ reply.user.profile_image.url }}" 
+                                         class="h-5 w-5 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-5 w-5 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-400 text-xs"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            
+                            <div class="mr-2 flex-1">
+                                <div class="flex justify-between">
+                                    <div>
+                                        <a href="{% url 'profile_with_username' reply.user.username %}" 
+                                           class="font-bold text-xs hover:text-blue-500">
+                                            @{{ reply.user.username }}
+                                        </a>
+                                        <span class="text-gray-500 text-xs mr-1">• {{ reply.created_at|timesince }}</span>
+                                    </div>
+                                    
+                                    {% if reply.user == user or user.is_staff %}
+                                    <form method="POST" action="{% url 'delete_comment' reply.id %}" 
+                                          onsubmit="return confirm('هل أنت متأكد من حذف هذا الرد؟');"
+                                          class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-red-500 hover:text-red-600 text-xs">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                                
+                                <p class="text-xs mt-1">{{ reply.content }}</p>
+                                
+                                <!-- إجراءات الرد -->
+                                <div class="flex space-x-3 mt-1 text-gray-500">
+                                    <form method="POST" action="{% url 'like_comment' reply.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="hover:text-red-500 text-xs">
+                                            <i class="{% if reply.user_has_liked %}fas text-red-500{% else %}far{% endif %} fa-heart"></i>
+                                            <span class="mr-1">{{ reply.likes_count }}</span>
+                                        </button>
+                                    </form>
+                                    
+                                    <a href="{% url 'comment_likes' reply.id %}" class="hover:text-green-500 text-xs">
+                                        المعجبين
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// تبديل قائمة إجراءات التعليق
+function toggleCommentActions(commentId) {
+    const actionsDiv = document.getElementById(`comment-actions-${commentId}`);
+    actionsDiv.classList.toggle('hidden');
+    
+    // إغلاق قوائم الإجراءات الأخرى
+    document.querySelectorAll('[id^="comment-actions-"]').forEach(div => {
+        if (div.id !== `comment-actions-${commentId}`) {
+            div.classList.add('hidden');
+        }
+    });
+}
+
+// تعديل التعليق
+function editComment(commentId) {
+    document.getElementById(`comment-content-${commentId}`).classList.add('hidden');
+    document.getElementById(`comment-edit-form-${commentId}`).classList.remove('hidden');
+    document.getElementById(`comment-actions-${commentId}`).classList.add('hidden');
+}
+
+// إلغاء تعديل التعليق
+function cancelEditComment(commentId) {
+    document.getElementById(`comment-content-${commentId}`).classList.remove('hidden');
+    document.getElementById(`comment-edit-form-${commentId}`).classList.add('hidden');
+}
+
+// تبديل نموذج الرد
+function toggleReply(commentId) {
+    const replyDiv = document.getElementById(`reply-${commentId}`);
+    replyDiv.classList.toggle('hidden');
+}
+
+// تبديل عرض الردود
+function toggleReplies(commentId) {
+    const repliesDiv = document.getElementById(`replies-${commentId}`);
+    repliesDiv.classList.toggle('hidden');
+    
+    const button = repliesDiv.previousElementSibling;
+    if (repliesDiv.classList.contains('hidden')) {
+        button.innerHTML = `<i class="fas fa-comments ml-2"></i> <span id="replies-count-${commentId}">عرض الردود</span>`;
+    } else {
+        button.innerHTML = `<i class="fas fa-chevron-up ml-2"></i> <span id="replies-count-${commentId}">إخفاء الردود</span>`;
+    }
+}
+
+// AJAX لتعديل التعليق
+document.addEventListener('DOMContentLoaded', function() {
+    const editForms = document.querySelectorAll('.comment-edit-form');
+    editForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const commentId = this.action.split('/').filter(part => part).pop();
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const contentDiv = document.getElementById(`comment-content-${commentId}`);
+                    contentDiv.querySelector('p').textContent = data.content;
+                    contentDiv.classList.remove('hidden');
+                    document.getElementById(`comment-edit-form-${commentId}`).classList.add('hidden');
+                    
+                    // إضافة علامة تم التعديل
+                    if (data.is_edited) {
+                        if (!contentDiv.querySelector('.edited-text')) {
+                            const editedSpan = document.createElement('span');
+                            editedSpan.className = 'text-gray-500 text-xs edited-text';
+                            editedSpan.textContent = ' (تم التعديل)';
+                            contentDiv.appendChild(editedSpan);
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+    
+    // AJAX للردود
+    const replyForms = document.querySelectorAll('.reply-form');
+    replyForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const commentId = this.action.split('/').filter(part => part).pop();
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // إعادة تحميل الصفحة أو إضافة الرد ديناميكياً
+                    location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>

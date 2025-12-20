@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - تويتر كلون</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-md">
+            <i class="fab fa-twitter text-blue-500 text-4xl mx-auto block text-center"></i>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                تسجيل الدخول إلى حسابك
+            </h2>
+        </div>
+
+        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <form @submit.prevent="login" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">
+                            اسم المستخدم
+                        </label>
+                        <div class="mt-1">
+                            <input id="username" v-model="username" type="text" required
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">
+                            كلمة المرور
+                        </label>
+                        <div class="mt-1">
+                            <input id="password" v-model="password" type="password" required
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        {{ error }}
+                    </div>
+
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            تسجيل الدخول
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">أو</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <p class="text-center text-sm text-gray-600">
+                            ليس لديك حساب؟
+                            <a href="/register/" class="font-medium text-blue-600 hover:text-blue-500 mr-1">
+                                سجل الآن
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <script>
+    new Vue({
+        el: '#app',
+        data: {
+            username: '',
+            password: '',
+            error: ''
+        },
+        methods: {
+            async login() {
+                try {
+                    const response = await axios.post('/api/login/', {
+                        username: this.username,
+                        password: this.password
+                    });
+                    
+                    if (response.data.status === 'success') {
+                        window.location.href = '/';
+                    }
+                } catch (error) {
+                    this.error = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+                }
+            }
+        }
+    });
+    </script>
+</body>
+</html>

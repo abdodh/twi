@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}معجبي التعليق - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4">
+    <!-- زر الرجوع -->
+    <div class="mb-6">
+        <a href="{% url 'post_detail' comment.post.id %}" class="text-blue-500 hover:text-blue-600">
+            <i class="fas fa-arrow-right ml-2"></i> العودة للمنشور
+        </a>
+    </div>
+    
+    <!-- العنوان -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h1 class="text-2xl font-bold mb-4">معجبي التعليق</h1>
+        <div class="text-gray-600 mb-4">
+            <p>التعليق: "{{ comment.content|truncatechars:50 }}"</p>
+            <p class="text-sm mt-2">عدد المعجبين: {{ likes|length }}</p>
+        </div>
+    </div>
+    
+    <!-- قائمة المعجبين -->
+    <div class="bg-white rounded-lg shadow">
+        {% if likes %}
+            <div class="divide-y">
+                {% for like in likes %}
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center">
+                        <!-- صورة المستخدم -->
+                        <a href="{% url 'profile_with_username' like.user.username %}">
+                            {% if like.user.profile_image %}
+                                <img src="{{ like.user.profile_image.url }}" 
+                                     class="h-10 w-10 rounded-full object-cover">
+                            {% else %}
+                                <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                            {% endif %}
+                        </a>
+                        
+                        <!-- معلومات المستخدم -->
+                        <div class="mr-3">
+                            <a href="{% url 'profile_with_username' like.user.username %}" 
+                               class="font-bold hover:text-blue-500">
+                                @{{ like.user.username }}
+                            </a>
+                            <p class="text-gray-500 text-sm">{{ like.user.first_name }} {{ like.user.last_name }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- تاريخ الإعجاب -->
+                    <div class="text-gray-500 text-sm">
+                        {{ like.created_at|timesince }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="p-8 text-center">
+                <i class="far fa-heart text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600">لا يوجد معجبين بعد</p>
+                <p class="text-gray-500 text-sm mt-1">كن أول من يعجب بهذا التعليق</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

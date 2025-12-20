@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+
+{% block title %}بحث: {{ query|default:"تويتر كلون" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-highlight {
+    background-color: #fef3c7;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.search-tabs .active {
+    border-bottom: 3px solid #3b82f6;
+    color: #3b82f6;
+    font-weight: bold;
+}
+
+.search-result-card {
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.search-result-card:hover {
+    transform: translateX(-4px);
+    border-left-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+.hashtag-chip {
+    display: inline-block;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    margin: 0.125rem;
+    transition: all 0.2s ease;
+}
+
+.hashtag-chip:hover {
+    background-color: #bae6fd;
+    transform: scale(1.05);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- شريط البحث -->
+    <div class="mb-8">
+        <form method="GET" action="{% url 'search' %}" class="relative">
+            <div class="flex">
+                <input type="text" 
+                       name="q" 
+                       value="{{ query }}"
+                       placeholder="ابحث عن مستخدمين، منشورات، أو هاشتاجات..."
+                       class="flex-grow px-6 py-4 text-lg border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       id="search-input"
+                       autocomplete="off">
+                <button type="submit" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-8 rounded-l-lg">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            
+            <!-- الاقتراحات التلقائية -->
+            <div id="autocomplete-results" 
+                 class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg mt-1 hidden z-50">
+                <!-- سيتم ملؤه بالاقتراحات -->
+            </div>
+        </form>
+    </div>
+
+    <!-- تبويبات البحث -->
+    <div class="mb-6 border-b">
+        <div class="flex space-x-6 search-tabs">
+            <a href="{% url 'search' %}?q={{ query|urlencode }}&type=all"
+               class="pb-3 px-2 {% if search_type == 'all' %}active{% endif %}">
+                الكل
+                {% if search_type == 'all' and results_count %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">
+                    {{ results_count }}
+                </span>
+                {% endif %}
+            </a>
+            <a href="{% url 'search' %}?q={{ query|urlencode }}&type=users"
+               class="pb-3 px-2 {% if search_type == 'users' %}active{% endif %}">
+                المستخدمين
+                {% if users %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">
+                    {{ users|length }}
+                </span>
+                {% endif %}
+            </a>
+            <a href="{% url 'search' %}?q={{ query|urlencode }}&type=posts"
+               class="pb-3 px-2 {% if search_type == 'posts' %}active{% endif %}">
+                المنشورات
+                {% if posts %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">
+                    {{ posts|length }}
+                </span>
+                {% endif %}
+            </a>
+            <a href="{% url 'search' %}?q={{ query|urlencode }}&type=hashtags"
+               class="pb-3 px-2 {% if search_type == 'hashtags' %}active{% endif %}">
+                الهاشتاجات
+                {% if hashtags %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2">
+                    {{ hashtags|length }}
+                </span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+
+    <!-- نتائج البحث -->
+    <div class="space-y-8">
+        <!-- إذا لم يكن هناك بحث -->
+        {% if not query %}
+        <div class="text-center py-12">
+            <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-600 mb-2">ابدأ البحث</h3>
+            <p class="text-gray-500">ابحث عن مستخدمين، منشورات، أو هاشتاجات</p>
+            
+            <!-- اقتراحات بحث سريعة -->
+            <div class="mt-8">
+                <h4 class="font-bold mb-4">جرب البحث عن:</h4>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <a href="{% url 'search' %}?q=تقنية" 
+                       class="hashtag-chip">تقنية</a>
+                    <a href="{% url 'search' %}?q=رياضة" 
+                       class="hashtag-chip">رياضة</a>
+                    <a href="{% url 'search' %}?q=فن" 
+                       class="hashtag-chip">فن</a>
+                    <a href="{% url 'search' %}?q=سفر" 
+                       class="hashtag-chip">سفر</a>
+                    <a href="{% url 'search' %}?q=#تغريدة" 
+                       class="hashtag-chip">#تغريدة</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- إذا كان هناك بحث ولكن لا توجد نتائج -->
+        {% elif results_count == 0 %}
+        <div class="text-center py-12">
+            <i class="fas fa-search-minus text-gray-400 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-600 mb-2">لم يتم العثور على نتائج</h3>
+            <p class="text-gray-500">لا توجد نتائج لـ "{{ query }}"</p>
+            
+            <!-- اقتراحات -->
+            <div class="mt-6 space-y-2">
+                <p class="text-gray-600">جرب:</p>
+                <ul class="list-disc list-inside text-gray-500 text-sm text-right">
+                    <li>استخدام كلمات بحث مختلفة</li>
+                    <li>البحث عن هاشتاجات باستخدام #</li>
+                    <li>البحث عن أسماء مستخدمين</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- إذا كانت هناك نتائج -->
+        {% else %}
+            <!-- نتائج المستخدمين -->
+            {% if users and search_type in 'all,users' %}
+            <div>
+                <h3 class="text-xl font-bold mb-4 border-b pb-2">
+                    المستخدمين
+                    <span class="text-gray-500 text-sm">({{ users|length }})</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for user in users %}
+                    <div class="search-result-card bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center">
+                            <!-- صورة المستخدم -->
+                            <a href="{% url 'profile_with_username' user.username %}" class="flex-shrink-0">
+                                {% if user.profile_image %}
+                                    <img src="{{ user.profile_image.url }}" 
+                                         class="h-12 w-12 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            
+                            <!-- معلومات المستخدم -->
+                            <div class="mr-3 flex-grow">
+                                <a href="{% url 'profile_with_username' user.username %}" 
+                                   class="font-bold hover:text-blue-500 block">
+                                    {{ user.first_name }} {{ user.last_name }}
+                                </a>
+                                <p class="text-gray-600 text-sm">@{{ user.username }}</p>
+                                
+                                {% if user.bio %}
+                                <p class="text-gray-500 text-xs mt-1 truncate">{{ user.bio|truncatechars:50 }}</p>
+                                {% endif %}
+                                
+                                <!-- الإحصائيات -->
+                                <div class="flex space-x-4 mt-2 text-xs text-gray-500">
+                                    <span>{{ user.posts_count }} تغريدة</span>
+                                    <span>{{ user.followers_count }} متابع</span>
+                                </div>
+                            </div>
+                            
+                            <!-- زر المتابعة -->
+                            {% if user != request.user %}
+                            <form method="POST" action="{% url 'toggle_follow' user.username %}" class="follow-form">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="{% if user.is_following %}bg-gray-200 hover:bg-gray-300 text-gray-800{% else %}bg-blue-500 hover:bg-blue-600 text-white{% endif %} text-xs py-1 px-3 rounded-full transition">
+                                    {% if user.is_following %}
+                                        متابَع
+                                    {% else %}
+                                        متابعة
+                                    {% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- نتائج المنشورات -->
+            {% if posts and search_type in 'all,posts' %}
+            <div>
+                <h3 class="text-xl font-bold mb-4 border-b pb-2">
+                    المنشورات
+                    <span class="text-gray-500 text-sm">({{ posts|length }})</span>
+                </h3>
+                <div class="space-y-4">
+                    {% for post in posts %}
+                    <div class="search-result-card bg-white rounded-lg shadow p-4">
+                        <div class="flex items-start">
+                            <!-- صورة المستخدم -->
+                            <a href="{% url 'profile_with_username' post.user.username %}" class="flex-shrink-0">
+                                {% if post.user.profile_image %}
+                                    <img src="{{ post.user.profile_image.url }}" 
+                                         class="h-10 w-10 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            
+                            <!-- محتوى المنشور -->
+                            <div class="mr-3 flex-grow">
+                                <div class="flex justify-between">
+                                    <div>
+                                        <a href="{% url 'profile_with_username' post.user.username %}" 
+                                           class="font-bold hover:text-blue-500">
+                                            @{{ post.user.username }}
+                                        </a>
+                                        <span class="text-gray-500 text-sm mr-2">• {{ post.created_at|timesince }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- محتوى المنشور مع تظليل الكلمات المفتاحية -->
+                                <p class="mt-2">
+                                    {% highlight_text post.content query %}
+                                </p>
+                                
+                                <!-- الهاشتاجات في المنشور -->
+                                {% with hashtags=post.content|extract_hashtags %}
+                                {% if hashtags %}
+                                <div class="mt-2 flex flex-wrap">
+                                    {% for hashtag in hashtags %}
+                                    <a href="{% url 'search' %}?q=%23{{ hashtag }}&type=hashtags" 
+                                       class="hashtag-chip">
+                                        #{{ hashtag }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                                
+                                <!-- إحصائيات المنشور -->
+                                <div class="flex space-x-4 mt-3 text-gray-500 text-sm">
+                                    <span>
+                                        <i class="far fa-heart"></i>
+                                        {{ post.likes_count }}
+                                    </span>
+                                    <span>
+                                        <i class="far fa-comment"></i>
+                                        {{ post.comments_count }}
+                                    </span>
+                                    <a href="{% url 'post_detail' post.id %}" 
+                                       class="text-blue-500 hover:text-blue-600">
+                                        عرض المنشور
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- نتائج الهاشتاجات -->
+            {% if hashtags and search_type in 'all,hashtags' %}
+            <div>
+                <h3 class="text-xl font-bold mb-4 border-b pb-2">
+                    الهاشتاجات
+                    <span class="text-gray-500 text-sm">({{ hashtags|length }})</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for hashtag in hashtags %}
+                    <div class="search-result-card bg-white rounded-lg shadow p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <a href="{% url 'search' %}?q=%23{{ hashtag.name }}&type=hashtags" 
+                                   class="text-lg font-bold text-blue-600 hover:text-blue-700">
+                                    #{{ hashtag.name }}
+                                </a>
+                                <p class="text-gray-500 text-sm mt-1">
+                                    {{ hashtag.usage_count }} تغريدة
+                                </p>
+                                <p class="text-gray-500 text-xs mt-2">
+                                    آخر استخدام: {{ hashtag.created_at|timesince }}
+                                </p>
+                            </div>
+                            <a href="{% url 'search' %}?q=%23{{ hashtag.name }}&type=hashtags" 
+                               class="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs py-1 px-3 rounded-full">
+                                استكشاف
+                            </a>
+                        </div>
+                        
+                        <!-- أمثلة على المنشورات التي تستخدم الهاشتاج -->
+                        {% with recent_posts=hashtag.posts.all|slice:":3" %}
+                        {% if recent_posts %}
+                        <div class="mt-3 pt-3 border-t">
+                            <p class="text-gray-600 text-sm mb-2">أحدث المنشورات:</p>
+                            <div class="space-y-2">
+                                {% for post in recent_posts %}
+                                <a href="{% url 'post_detail' post.id %}" 
+                                   class="block text-gray-500 text-xs hover:text-blue-500 truncate">
+                                    {{ post.content|truncatechars:60 }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// الاقتراح التلقائي
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const autocompleteResults = document.getElementById('autocomplete-results');
+    let timeoutId;
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // إلغاء الطلب السابق
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        
+        // إخفاء نتائج الاقتراح إذا كان الحقل فارغاً
+        if (query.length < 2) {
+            autocompleteResults.classList.add('hidden');
+            return;
+        }
+        
+        // تأخير الطلب لتجنب طلبات كثيرة
+        timeoutId = setTimeout(() => {
+            fetchAutocompleteResults(query);
+        }, 300);
+    });
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2) {
+            fetchAutocompleteResults(this.value.trim());
+        }
+    });
+
+    // إخفاء نتائج الاقتراح عند النقر خارجها
+    document.addEventListener('click', function(event) {
+        if (!autocompleteResults.contains(event.target) && event.target !== searchInput) {
+            autocompleteResults.classList.add('hidden');
+        }
+    });
+
+    function fetchAutocompleteResults(query) {
+        fetch(`/search/autocomplete/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results.length > 0) {
+                    displayAutocompleteResults(data.results);
+                } else {
+                    autocompleteResults.classList.add('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching autocomplete:', error);
+                autocompleteResults.classList.add('hidden');
+            });
+    }
+
+    function displayAutocompleteResults(results) {
+        autocompleteResults.innerHTML = '';
+        
+        results.forEach(result => {
+            const item = document.createElement('a');
+            item.href = result.url;
+            item.className = 'flex items-center px-4 py-3 hover:bg-gray-50 border-b last:border-b-0';
+            
+            if (result.type === 'user') {
+                item.innerHTML = `
+                    <div class="flex-shrink-0">
+                        ${result.profile_image ? 
+                            `<img src="${result.profile_image}" class="h-8 w-8 rounded-full">` :
+                            `<div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>`
+                        }
+                    </div>
+                    <div class="mr-3">
+                        <div class="font-medium">${result.name}</div>
+                        <div class="text-gray-500 text-sm">@${result.username}</div>
+                    </div>
+                `;
+            } else if (result.type === 'hashtag') {
+                item.innerHTML = `
+                    <div class="mr-3">
+                        <div class="font-medium">${result.name}</div>
+                        <div class="text-gray-500 text-sm">${result.count} تغريدة</div>
+                    </div>
+                `;
+            }
+            
+            autocompleteResults.appendChild(item);
+        });
+        
+        autocompleteResults.classList.remove('hidden');
+    }
+});
+
+// AJAX للمتابعة في صفحة البحث
+document.addEventListener('DOMContentLoaded', function() {
+    const followForms = document.querySelectorAll('.follow-form');
+    
+    followForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const button = this.querySelector('button');
+            const originalText = button.textContent;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.action === 'followed') {
+                        button.textContent = 'متابَع';
+                        button.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                        button.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+                    } else {
+                        button.textContent = 'متابعة';
+                        button.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-800');
+                        button.classList.add('bg-blue-500', 'hover:bg-blue-600', 'text-white');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.textContent = originalText;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}الأمان - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">الأمان</h1>
+        <p class="text-gray-600 mt-2">إدارة أمان حسابك وكلمة المرور</p>
+    </div>
+    
+    <!-- الرسائل -->
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700
+                    {% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700
+                    {% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} 
+                    border px-4 py-3 rounded mb-2">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <!-- تغيير كلمة المرور -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6 border-b pb-2">تغيير كلمة المرور</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="space-y-4">
+                        {% if form.errors %}
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div>
+                            <label for="id_old_password" class="block text-gray-700 mb-2">كلمة المرور الحالية</label>
+                            <input type="password" name="old_password" id="id_old_password" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label for="id_new_password1" class="block text-gray-700 mb-2">كلمة المرور الجديدة</label>
+                            <input type="password" name="new_password1" id="id_new_password1" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                            <p class="text-gray-500 text-sm mt-1">
+                                يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل ولا تكون شائعة الاستخدام.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <label for="id_new_password2" class="block text-gray-700 mb-2">تأكيد كلمة المرور الجديدة</label>
+                            <input type="password" name="new_password2" id="id_new_password2" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="submit" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                                تغيير كلمة المرور
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- أمان إضافي -->
+            <div class="border-t pt-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">أمان إضافي</h3>
+                <div class="space-y-4">
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold mb-2">جلسات تسجيل الدخول النشطة</h4>
+                        <p class="text-gray-600 text-sm mb-3">يمكنك رؤية جلسات تسجيل الدخول النشطة على حسابك وإنهائها.</p>
+                        <button class="text-blue-500 hover:text-blue-600 font-medium">
+                            عرض الجلسات النشطة
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold mb-2">المصادقة الثنائية</h4>
+                        <p class="text-gray-600 text-sm mb-3">إضافة طبقة أمان إضافية لحسابك باستخدام تطبيق المصادقة.</p>
+                        <button class="text-blue-500 hover:text-blue-600 font-medium">
+                            إعداد المصادقة الثنائية
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                        <h4 class="font-bold mb-2 text-red-700">مناطق الخطر</h4>
+                        <p class="text-red-600 text-sm mb-3">هذه الإجراءات لا يمكن التراجع عنها.</p>
+                        <div class="space-y-2">
+                            <button class="text-red-600 hover:text-red-700 font-medium">
+                                <i class="fas fa-trash-alt ml-2"></i> حذف الحساب
+                            </button>
+                            <p class="text-red-500 text-xs">سيتم حذف جميع بياناتك بشكل دائم ولا يمكن استعادتها.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// عرض/إخفاء كلمة المرور
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    passwordFields.forEach(field => {
+        const container = field.parentElement;
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'absolute left-3 top-9 text-gray-500 hover:text-gray-700';
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        toggleBtn.style.position = 'absolute';
+        
+        container.style.position = 'relative';
+        field.style.paddingRight = '40px';
+        
+        toggleBtn.addEventListener('click', function() {
+            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+            field.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+        
+        container.appendChild(toggleBtn);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تويتر كلون</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        [dir="rtl"] {
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-sm">
+    <!-- عرض الرسائل -->
+{% if messages %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700
+                {% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700
+                {% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} 
+                border px-4 py-3 rounded mb-2">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fab fa-twitter text-blue-500 text-2xl ml-3"></i>
+                    <span class="font-bold text-lg">تويتر كلون</span>
+                </div>
+                <div class="space-x-4">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'logout' %}" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
+                        تسجيل الخروج
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
+                        تسجيل الدخول
+                    </a>
+                    <a href="{% url 'register' %}" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
+                        إنشاء حساب
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        {% if user.is_authenticated %}
+        <!-- واجهة المستخدم المسجل -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- الشريط الجانبي -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow p-4 mb-6">
+                    <div class="text-center mb-6">
+                        <img src="{% static 'images/default-profile.png' %}" 
+                             class="h-24 w-24 rounded-full mx-auto object-cover border-4 border-white shadow"
+                             alt="الصورة الشخصية">
+                        <h3 class="mt-3 font-bold text-lg">@{{ user.username }}</h3>
+                        <p class="text-gray-600 text-sm">مرحباً بك!</p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <a href="#create-post" 
+                           class="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full text-center">
+                            <i class="fas fa-feather-alt ml-2"></i> تغريدة جديدة
+                        </a>
+                        
+                        <div class="space-y-4">
+                            <a href="#profile" class="block text-gray-700 hover:text-blue-500">
+                                <i class="fas fa-user ml-2"></i> الملف الشخصي
+                            </a>
+                            <a href="#settings" class="block text-gray-700 hover:text-blue-500">
+                                <i class="fas fa-cog ml-2"></i> الإعدادات
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- المحتوى الرئيسي -->
+            <div class="lg:col-span-3">
+                <!-- نموذج إنشاء منشور -->
+                <!-- نموذج إنشاء منشور -->
+<div id="create-post" class="bg-white rounded-lg shadow p-4 mb-6">
+    <h3 class="text-lg font-bold mb-4">أنشر تغريدة</h3>
+    <form method="POST" action="{% url 'create_post' %}" enctype="multipart/form-data" id="post-form">
+        {% csrf_token %}
+        <textarea name="content" 
+                  placeholder="ما الذي يدور في ذهنك؟"
+                  rows="3"
+                  class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500 mb-3"
+                  required></textarea>
+        
+        <div class="flex justify-between items-center">
+            <div class="flex space-x-2">
+                <button type="button" onclick="document.getElementById('image-input').click()" 
+                        class="text-green-500 hover:text-green-600">
+                    <i class="fas fa-image text-lg"></i>
+                </button>
+                <button type="button" onclick="document.getElementById('video-input').click()" 
+                        class="text-purple-500 hover:text-purple-600">
+                    <i class="fas fa-video text-lg"></i>
+                </button>
+                
+                <input type="file" id="image-input" name="image" accept="image/*" class="hidden" 
+                       onchange="previewImage(this)">
+                <input type="file" id="video-input" name="video" accept="video/*" class="hidden">
+                
+                <!-- معاينة الصورة -->
+                <div id="image-preview" class="hidden">
+                    <img id="preview" class="h-12 w-12 object-cover rounded">
+                </div>
+            </div>
+            
+            <button type="submit" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full">
+                نشر
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview').src = e.target.result;
+            document.getElementById('image-preview').classList.remove('hidden');
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+                
+                <!-- المنشورات -->
+                <div id="posts">
+                    {% for post in posts %}
+                    <div class="bg-white rounded-lg shadow p-4 mb-4">
+                        <div class="flex items-start">
+                            <img src="{% static 'images/default-profile.png' %}" 
+                                 class="h-10 w-10 rounded-full object-cover">
+                            <div class="mr-3 flex-1">
+                                <div class="flex justify-between">
+                                    <h4 class="font-bold">@{{ post.user.username }}</h4>
+                                    <span class="text-gray-500 text-sm">{{ post.created_at|date:"Y/m/d H:i" }}</span>
+                                </div>
+                                <p class="mt-2">{{ post.content }}</p>
+                                
+                                {% if post.image %}
+                                <img src="{{ post.image.url }}" class="mt-3 max-w-full h-auto rounded-lg">
+                                {% endif %}
+                                
+                                <div class="flex space-x-4 mt-3 text-gray-500 border-t pt-3">
+                                    <form method="POST" action="{% url 'like_post' post.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="hover:text-red-500">
+                                            <i class="far fa-heart"></i>
+                                            <span class="mr-1">{{ post.likes_count }}</span>
+                                        </button>
+                                    </form>
+                                    <button class="hover:text-blue-500">
+                                        <i class="far fa-comment"></i>
+                                        <span class="mr-1">{{ post.comments_count }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="bg-white rounded-lg shadow p-8 text-center">
+                        <i class="fas fa-feather-alt text-gray-400 text-4xl mb-4"></i>
+                        <h3 class="text-lg font-bold text-gray-600 mb-2">لا توجد تغريدات بعد</h3>
+                        <p class="text-gray-500">كن أول من ينشر تغريدة!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- واجهة الزوار -->
+        <div class="text-center py-12">
+            <i class="fab fa-twitter text-blue-500 text-6xl mb-6"></i>
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">تويتر كلون</h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                انضم إلى مجتمعنا وشارك أفكارك مع العالم
+            </p>
+            
+            <div class="space-x-4 mb-12">
+                <a href="{% url 'register' %}" 
+                   class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full text-lg inline-block">
+                    إنشاء حساب
+                </a>
+                <a href="{% url 'login' %}" 
+                   class="bg-white hover:bg-gray-100 text-blue-500 font-bold py-3 px-6 rounded-full text-lg border border-blue-500 inline-block">
+                    تسجيل الدخول
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <i class="fas fa-comments text-blue-500 text-3xl mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">شارك أفكارك</h3>
+                    <p class="text-gray-600">أنشر تغريداتك وشاركها مع المتابعين</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <i class="fas fa-users text-blue-500 text-3xl mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">تابع الآخرين</h3>
+                    <p class="text-gray-600">تابع أصدقاءك وشخصياتك المفضلة</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <i class="fas fa-heart text-blue-500 text-3xl mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">تفاعل مع المحتوى</h3>
+                    <p class="text-gray-600">أعجب بالمنشورات وعلق عليها</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="bg-white border-t mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500">
+                &copy; 2023 تويتر كلون. جميع الحقوق محفوظة.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

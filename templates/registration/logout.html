@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الخروج - تويتر كلون</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>[dir="rtl"]{text-align:right;}</style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="text-center">
+        <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+        <h1 class="text-2xl font-bold mb-4">تم تسجيل الخروج بنجاح</h1>
+        <p class="text-gray-600 mb-6">لقد تم تسجيل خروجك من الحساب بنجاح.</p>
+        <a href="{% url 'home' %}" 
+           class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">
+            العودة للصفحة الرئيسية
+        </a>
+    </div>
+</body>
+</html>

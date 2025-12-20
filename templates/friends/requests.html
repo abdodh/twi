@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}طلبات الصداقة - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- رأس الصفحة -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold mb-2">طلبات الصداقة</h1>
+        <div class="flex space-x-4">
+            <a href="#incoming" 
+               class="px-4 py-2 rounded-lg bg-blue-500 text-white font-medium">
+                الطلبات الواردة ({{ incoming_requests|length }})
+            </a>
+            <a href="#outgoing" 
+               class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-medium hover:bg-gray-300">
+                الطلبات المرسلة ({{ outgoing_requests|length }})
+            </a>
+        </div>
+    </div>
+    
+    <!-- الطلبات الواردة -->
+    <div id="incoming" class="mb-12">
+        <h2 class="text-xl font-bold mb-4">الطلبات الواردة</h2>
+        
+        {% if incoming_requests %}
+        <div class="bg-white rounded-lg shadow">
+            <div class="divide-y">
+                {% for request in incoming_requests %}
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <!-- معلومات المرسل -->
+                        <div class="flex items-center">
+                            <a href="{% url 'profile_with_username' request.from_user.username %}">
+                                {% if request.from_user.profile_image %}
+                                    <img src="{{ request.from_user.profile_image.url }}" 
+                                         class="h-14 w-14 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-14 w-14 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-400 text-xl"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="mr-4">
+                                <h3 class="font-bold">
+                                    <a href="{% url 'profile_with_username' request.from_user.username %}" 
+                                       class="hover:text-blue-500">
+                                        @{{ request.from_user.username }}
+                                    </a>
+                                </h3>
+                                <p class="text-gray-600 text-sm">
+                                    {{ request.from_user.first_name }} {{ request.from_user.last_name }}
+                                </p>
+                                <p class="text-gray-500 text-xs mt-1">
+                                    <i class="fas fa-clock ml-1"></i>
+                                    منذ {{ request.created_at|timesince }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- أزرار القبول/الرفض -->
+                        <div class="flex space-x-2">
+                            <form method="POST" action="{% url 'accept_friend_request' request.id %}">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-check ml-2"></i> قبول
+                                </button>
+                            </form>
+                            
+                            <form method="POST" action="{% url 'reject_friend_request' request.id %}">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-times ml-2"></i> رفض
+                                </button>
+                            </form>
+                            
+                            <form method="POST" action="{% url 'block_user' request.from_user.username %}"
+                                  onsubmit="return confirm('هل تريد حظر هذا المستخدم؟');">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded-lg">
+                                    <i class="fas fa-ban ml-2"></i> حظر
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow p-8 text-center">
+            <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+            <p class="text-gray-600">لا توجد طلبات صداقة واردة</p>
+            <p class="text-gray-500 text-sm mt-1">طلبات الصداقة الواردة ستظهر هنا</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- الطلبات المرسلة -->
+    <div id="outgoing">
+        <h2 class="text-xl font-bold mb-4">الطلبات المرسلة</h2>
+        
+        {% if outgoing_requests %}
+        <div class="bg-white rounded-lg shadow">
+            <div class="divide-y">
+                {% for request in outgoing_requests %}
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <!-- معلومات المستقبِل -->
+                        <div class="flex items-center">
+                            <a href="{% url 'profile_with_username' request.to_user.username %}">
+                                {% if request.to_user.profile_image %}
+                                    <img src="{{ request.to_user.profile_image.url }}" 
+                                         class="h-14 w-14 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-14 w-14 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-400 text-xl"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="mr-4">
+                                <h3 class="font-bold">
+                                    <a href="{% url 'profile_with_username' request.to_user.username %}" 
+                                       class="hover:text-blue-500">
+                                        @{{ request.to_user.username }}
+                                    </a>
+                                </h3>
+                                <p class="text-gray-600 text-sm">
+                                    {{ request.to_user.first_name }} {{ request.to_user.last_name }}
+                                </p>
+                                <p class="text-gray-500 text-xs mt-1">
+                                    <i class="fas fa-clock ml-1"></i>
+                                    منذ {{ request.created_at|timesince }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- زر الإلغاء -->
+                        <form method="POST" action="{% url 'cancel_friend_request' request.id %}">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg">
+                                <i class="fas fa-times ml-2"></i> إلغاء الطلب
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow p-8 text-center">
+            <i class="fas fa-paper-plane text-gray-400 text-4xl mb-4"></i>
+            <p class="text-gray-600">لا توجد طلبات صداقة مرسلة</p>
+            <p class="text-gray-500 text-sm mt-1">الطلبات التي ترسلها ستظهر هنا</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// تبديل التبويبات
+document.addEventListener('DOMContentLoaded', function() {
+    const incomingLink = document.querySelector('a[href="#incoming"]');
+    const outgoingLink = document.querySelector('a[href="#outgoing"]');
+    const incomingSection = document.getElementById('incoming');
+    const outgoingSection = document.getElementById('outgoing');
+    
+    incomingLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        incomingSection.scrollIntoView({ behavior: 'smooth' });
+        this.classList.add('bg-blue-500', 'text-white');
+        this.classList.remove('bg-gray-200', 'text-gray-800');
+        outgoingLink.classList.remove('bg-blue-500', 'text-white');
+        outgoingLink.classList.add('bg-gray-200', 'text-gray-800');
+    });
+    
+    outgoingLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        outgoingSection.scrollIntoView({ behavior: 'smooth' });
+        this.classList.add('bg-blue-500', 'text-white');
+        this.classList.remove('bg-gray-200', 'text-gray-800');
+        incomingLink.classList.remove('bg-blue-500', 'text-white');
+        incomingLink.classList.add('bg-gray-200', 'text-gray-800');
+    });
+});
+</script>
+{% endblock %}

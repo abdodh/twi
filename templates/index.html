@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تويتر كلون</title>
+    
+    <!-- Vue.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- CSRF Token -->
+    {% csrf_token %}
+    
+    <style>
+        [dir="rtl"] {
+            text-align: right;
+        }
+        
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+        
+        .post-card {
+            transition: all 0.3s ease;
+        }
+        
+        .post-card:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .active-nav {
+            color: #1da1f2;
+            font-weight: bold;
+        }
+        
+        .vue-content {
+            display: none;
+        }
+        
+        .vue-content.ready {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading screen -->
+    <div id="loading" class="flex items-center justify-center h-screen">
+        <div class="text-center">
+            <i class="fab fa-twitter text-blue-500 text-4xl mb-4"></i>
+            <p class="text-gray-600">جاري التحميل...</p>
+        </div>
+    </div>
+    
+    <!-- Vue.js App Container -->
+    <div id="app" class="vue-content">
+        <!-- سيتم ملؤه بواسطة Vue.js -->
+    </div>
+    
+    <script>
+        // CSRF Token للطلبات
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        axios.defaults.headers.common['X-CSRFToken'] = csrfToken;
+        
+        // تكوين Tailwind
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        twitter: {
+                            blue: '#1da1f2',
+                            darkBlue: '#1a91da',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- ملف Vue.js الرئيسي -->
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

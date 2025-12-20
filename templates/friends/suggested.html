@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}مستخدمين مقترحين - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- العنوان -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">اكتشف أشخاص جدد</h1>
+        <p class="text-gray-600 mt-2">تابع أشخاص مثيرين للاهتمام وتعرف على أصدقاء جدد</p>
+    </div>
+    
+    <!-- فلترة -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="flex flex-wrap gap-4">
+            <button class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
+                الكل
+            </button>
+            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200">
+                مقترحون لك
+            </button>
+            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200">
+                الأكثر نشاطاً
+            </button>
+            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200">
+                في مدينتك
+            </button>
+        </div>
+    </div>
+    
+    <!-- شبكة المستخدمين المقترحين -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for user in suggested_users %}
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+            <!-- خلفية المستخدم -->
+            <div class="h-32 bg-gradient-to-r from-blue-400 to-purple-500 rounded-t-lg relative">
+                {% if user.cover_image %}
+                    <img src="{{ user.cover_image.url }}" class="h-full w-full object-cover rounded-t-lg">
+                {% endif %}
+                
+                <!-- الصورة الشخصية -->
+                <div class="absolute -bottom-8 right-6">
+                    {% if user.profile_image %}
+                        <img src="{{ user.profile_image.url }}" 
+                             class="h-16 w-16 rounded-full border-4 border-white object-cover">
+                    {% else %}
+                        <div class="h-16 w-16 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-user text-gray-400 text-xl"></i>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- معلومات المستخدم -->
+            <div class="p-6 pt-10">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <a href="{% url 'profile_with_username' user.username %}" 
+                           class="font-bold text-lg hover:text-blue-500">
+                            @{{ user.username }}
+                        </a>
+                        {% if user.first_name or user.last_name %}
+                        <p class="text-gray-600 text-sm">{{ user.first_name }} {{ user.last_name }}</p>
+                        {% endif %}
+                        
+                        {% if user.bio %}
+                        <p class="mt-2 text-gray-700 text-sm line-clamp-2">{{ user.bio|truncatechars:80 }}</p>
+                        {% endif %}
+                        
+                        <div class="flex items-center mt-3 text-gray-500 text-sm">
+                            <span class="ml-3">
+                                <i class="fas fa-users ml-1"></i>
+                                {{ user.followers_count }} متابع
+                            </span>
+                            <span>
+                                <i class="fas fa-feather-alt ml-1"></i>
+                                {{ user.posts_count }} تغريدة
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- أزرار الإجراءات -->
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <!-- زر المتابعة -->
+                    {% if not user.is_following %}
+                    <form method="POST" action="{% url 'toggle_follow' user.username %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-full transition">
+                            <i class="fas fa-user-plus ml-1"></i> متابعة
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{% url 'toggle_follow' user.username %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-full transition">
+                            <i class="fas fa-user-check ml-1"></i> متابَع
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <!-- زر الصداقة -->
+                    {% if not user.has_friend_request and not user.is_friend %}
+                    <form method="POST" action="{% url 'send_friend_request' user.username %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-full transition">
+                            <i class="fas fa-user-friends ml-1"></i> إضافة صديق
+                        </button>
+                    </form>
+                    {% elif user.has_friend_request %}
+                    <button class="px-4 py-2 bg-yellow-100 text-yellow-700 text-sm rounded-full cursor-default">
+                        <i class="fas fa-clock ml-1"></i> قيد الانتظار
+                    </button>
+                    {% elif user.is_friend %}
+                    <form method="POST" action="{% url 'remove_friend' user.username %}" 
+                          onsubmit="return confirm('هل أنت متأكد من إزالة هذا الصديق؟');" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-full transition">
+                            <i class="fas fa-user-times ml-1"></i> إزالة صديق
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <!-- زر الحظر -->
+                    <form method="POST" action="{% url 'block_user' user.username %}" 
+                          onsubmit="return confirm('هل أنت متأكد من حظر هذا المستخدم؟');" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-full transition">
+                            <i class="fas fa-ban ml-1"></i> حظر
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 bg-white rounded-lg shadow p-8 text-center">
+            <i class="fas fa-users text-gray-400 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-600 mb-2">لا يوجد مستخدمين مقترحين</h3>
+            <p class="text-gray-500">لقد تابعتَ أو أضفتَ جميع المستخدمين المقترحين!</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- إحصائيات -->
+    <div class="mt-8 bg-white rounded-lg shadow p-6">
+        <h3 class="font-bold text-lg mb-4">إحصائيات الشبكة</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <p class="text-3xl font-bold text-blue-600">{{ current_user.following_count }}</p>
+                <p class="text-gray-700">متابَع</p>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <p class="text-3xl font-bold text-green-600">{{ current_user.followers_count }}</p>
+                <p class="text-gray-700">متابِع</p>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <p class="text-3xl font-bold text-purple-600">
+                    {% widthratio current_user.followers_count current_user.following_count 100 %}%
+                </p>
+                <p class="text-gray-700">تفاعل</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.hover\:shadow-lg {
+    transition: box-shadow 0.3s ease;
+}
+</style>
+
+<script>
+// AJAX للمتابعة والإعجابات
+document.addEventListener('DOMContentLoaded', function() {
+    // تحويل جميع الفورمس إلى AJAX
+    const followForms = document.querySelectorAll('form[action*="/follow/"]');
+    followForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const button = this.querySelector('button');
+            const originalText = button.innerHTML;
+            
+            // تغيير النص أثناء التحميل
+            button.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري...';
+            button.disabled = true;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // تحديث زر المتابعة
+                    if (data.action === 'followed') {
+                        button.innerHTML = '<i class="fas fa-user-check ml-1"></i> متابَع';
+                        button.className = button.className.replace('bg-blue-500', 'bg-gray-200')
+                            .replace('hover:bg-blue-600', 'hover:bg-gray-300')
+                            .replace('text-white', 'text-gray-700');
+                    } else {
+                        button.innerHTML = '<i class="fas fa-user-plus ml-1"></i> متابعة';
+                        button.className = button.className.replace('bg-gray-200', 'bg-blue-500')
+                            .replace('hover:bg-gray-300', 'hover:bg-blue-600')
+                            .replace('text-gray-700', 'text-white');
+                    }
+                    
+                    // تحديث العداد إذا كان موجوداً
+                    const counter = document.querySelector('.followers-count');
+                    if (counter && data.followers_count !== undefined) {
+                        counter.textContent = data.followers_count;
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => {
+                button.disabled = false;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

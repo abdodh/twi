@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}إعدادات الحساب - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">إعدادات الحساب</h1>
+        <p class="text-gray-600 mt-2">تخصيص إعدادات حسابك وتجربة المستخدم</p>
+    </div>
+    
+    <!-- الرسائل -->
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700
+                    {% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700
+                    {% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} 
+                    border px-4 py-3 rounded mb-2">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="bg-white rounded-lg shadow">
+        <form method="POST" class="p-6">
+            {% csrf_token %}
+            
+            <div class="space-y-8">
+                <!-- قسم الإشعارات -->
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">الإشعارات</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <h4 class="font-bold">إشعارات البريد الإلكتروني</h4>
+                                <p class="text-gray-600 text-sm">تلقي إشعارات على بريدك الإلكتروني</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="email_notifications" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <h4 class="font-bold">إشعارات الدفع</h4>
+                                <p class="text-gray-600 text-sm">تلقي إشعارات فورية على المتصفح</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="push_notifications" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قسم الخصوصية -->
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">الخصوصية</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <h4 class="font-bold">جعل الحساب خاصاً</h4>
+                                <p class="text-gray-600 text-sm">الموافقة على متابعيك يدوياً</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="private_account">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <h4 class="font-bold">إظهار حالة النشاط</h4>
+                                <p class="text-gray-600 text-sm">إظهار آخر ظهور لك للمستخدمين الآخرين</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="show_activity_status" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قسم التخصيص -->
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">التخصيص</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="language" class="block text-gray-700 mb-2">اللغة</label>
+                            <select id="language" name="language" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                <option value="ar" selected>العربية</option>
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                                <option value="es">Español</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="theme" class="block text-gray-700 mb-2">السمة</label>
+                            <select id="theme" name="theme" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                <option value="light" selected>فاتح</option>
+                                <option value="dark">داكن</option>
+                                <option value="auto">تلقائي (يتابع النظام)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- أزرار الحفظ -->
+            <div class="mt-8 pt-6 border-t flex justify-end space-x-4">
+                <a href="{% url 'profile_with_username' user.username %}" 
+                   class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition">
+                    إلغاء
+                </a>
+                <button type="submit" 
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                    حفظ التغييرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #3b82f6;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+</style>
+{% endblock %}

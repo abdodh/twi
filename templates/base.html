@@ -1,0 +1,149 @@
+   {% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}تويتر كلون{% endblock %}</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        [dir="rtl"] { text-align: right; }
+        mark { padding: 0.1em 0.2em; border-radius: 0.2em; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- التنقل -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- الشعار وروابط التنقل -->
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="flex items-center">
+                        <i class="fab fa-twitter text-blue-500 text-2xl ml-3"></i>
+                        <span class="font-bold text-lg">تويتر كلون</span>
+                    </a>
+                    
+                    {% if user.is_authenticated %}
+                    <div class="hidden md:block mr-10">
+                        <div class="flex items-baseline space-x-4 space-x-reverse">
+                            <a href="{% url 'home' %}" 
+                               class="px-3 py-2 rounded-md text-sm font-medium hover:text-blue-500">
+                                <i class="fas fa-home ml-1"></i> الرئيسية
+                            </a>
+                            <a href="{% url 'search' %}" 
+                               class="px-3 py-2 rounded-md text-sm font-medium hover:text-blue-500">
+                                <i class="fas fa-search ml-1"></i> استكشف
+                            </a>
+                            <a href="{% url 'profile' %}" 
+                               class="px-3 py-2 rounded-md text-sm font-medium hover:text-blue-500">
+                                <i class="fas fa-user ml-1"></i> ملفي
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- البحث والمستخدم -->
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                    <!-- شريط البحث الصغير -->
+                    <div class="relative">
+                        <form method="GET" action="{% url 'search' %}" class="hidden md:block">
+                            <input type="text" 
+                                   name="q" 
+                                   placeholder="بحث..."
+                                   class="bg-gray-100 rounded-full py-2 px-4 pr-10 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- معلومات المستخدم -->
+                    <div class="flex items-center">
+                        <a href="{% url 'profile' %}" class="flex items-center text-gray-700 hover:text-blue-500">
+                            {% if user.profile_image %}
+                                <img src="{{ user.profile_image.url }}" 
+                                     class="h-8 w-8 rounded-full object-cover">
+                            {% else %}
+                                <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                            {% endif %}
+                            <span class="mr-2 text-sm font-medium hidden md:inline">@{{ user.username }}</span>
+                        </a>
+                        
+                        <!-- زر تسجيل الخروج -->
+                        <form method="POST" action="{% url 'logout' %}" class="mr-2">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-3 rounded-lg">
+                                خروج
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <!-- روابط الزوار -->
+                    <div class="space-x-2">
+                        <a href="{% url 'login' %}" 
+                           class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
+                            تسجيل الدخول
+                        </a>
+                        <a href="{% url 'register' %}" 
+                           class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
+                            إنشاء حساب
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- شريط البحث للجوال -->
+    {% if user.is_authenticated %}
+    <div class="md:hidden bg-white border-b">
+        <div class="px-4 py-2">
+            <form method="GET" action="{% url 'search' %}">
+                <div class="relative">
+                    <input type="text" 
+                           name="q" 
+                           placeholder="بحث في تويتر كلون..."
+                           class="w-full bg-gray-100 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- محتوى الصفحة -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm">
+                    &copy; 2023 تويتر كلون. جميع الحقوق محفوظة.
+                </p>
+                <div class="mt-4 md:mt-0 space-x-4">
+                    <a href="#" class="text-gray-500 hover:text-gray-700 text-sm">الشروط</a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700 text-sm">الخصوصية</a>
+                    <a href="#" class="text-gray-500 hover:text-gray-700 text-sm">اتصل بنا</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

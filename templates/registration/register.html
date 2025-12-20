@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}إنشاء حساب - تويتر كلون{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full">
+        <div class="text-center mb-8">
+            <i class="fab fa-twitter text-blue-500 text-5xl mb-4"></i>
+            <h2 class="text-3xl font-extrabold text-gray-900">إنشاء حساب جديد</h2>
+            <p class="mt-2 text-gray-600">انضم إلى مجتمعنا اليوم</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- عرض الأخطاء -->
+                {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p class="text-sm"><i class="fas fa-exclamation-circle ml-2"></i> {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p class="text-sm"><i class="fas fa-exclamation-circle ml-2"></i> {{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- حقول النموذج -->
+                <div class="space-y-4">
+                    <!-- اسم المستخدم -->
+                    <div>
+                        {{ form.username.label_tag }}
+                        {{ form.username }}
+                        {% if form.username.help_text %}
+                        <p class="text-gray-500 text-sm mt-1">{{ form.username.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- البريد الإلكتروني -->
+                    <div>
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                    </div>
+                    
+                    <!-- الاسم الأول والأخير -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            {{ form.first_name.label_tag }}
+                            {{ form.first_name }}
+                        </div>
+                        <div>
+                            {{ form.last_name.label_tag }}
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+                    
+                    <!-- كلمة المرور -->
+                    <div>
+                        {{ form.password1.label_tag }}
+                        {{ form.password1 }}
+                        {% if form.password1.help_text %}
+                        <div class="text-gray-500 text-sm mt-1">
+                            {{ form.password1.help_text }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- تأكيد كلمة المرور -->
+                    <div>
+                        {{ form.password2.label_tag }}
+                        {{ form.password2 }}
+                        {% if form.password2.help_text %}
+                        <div class="text-gray-500 text-sm mt-1">
+                            {{ form.password2.help_text }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- زر التسجيل -->
+                <div>
+                    <button type="submit" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                        إنشاء حساب
+                    </button>
+                </div>
+                
+                <!-- رابط تسجيل الدخول -->
+                <div class="text-center pt-4 border-t">
+                    <p class="text-gray-600">
+                        لديك حساب بالفعل؟
+                        <a href="{% url 'login' %}" class="text-blue-500 hover:text-blue-600 font-medium">
+                            سجل الدخول
+                        </a>
+                    </p>
+                </div>
+            </form>
+        </div>
+        
+        <!-- الشروط والأحكام -->
+        <div class="mt-6 text-center">
+            <p class="text-gray-500 text-xs">
+                بالإنشاء حساب، فإنك توافق على
+                <a href="#" class="text-blue-500 hover:text-blue-600">الشروط</a>
+                و
+                <a href="#" class="text-blue-500 hover:text-blue-600">سياسة الخصوصية</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* تنسيق عام للحقول */
+input, textarea, select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* تنسيق التسميات */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* تنسيق خاص لحقول كلمة المرور */
+input[type="password"] {
+    letter-spacing: 0.1em;
+}
+
+/* تحسين ظهور الأخطاء */
+.error input, .error textarea, .error select {
+    border-color: #ef4444;
+}
+
+.errorlist {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    list-style-type: none;
+    padding-right: 0;
+}
+</style>
+
+<script>
+// عرض/إخفاء كلمة المرور
+document.addEventListener('DOMContentLoaded', function() {
+    // إنشاء أزرار لعرض/إخفاء كلمة المرور
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    
+    passwordFields.forEach(field => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative';
+        
+        field.parentNode.insertBefore(wrapper, field);
+        wrapper.appendChild(field);
+        
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700';
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        
+        toggleBtn.addEventListener('click', function() {
+            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+            field.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+        
+        wrapper.appendChild(toggleBtn);
+    });
+    
+    // التحقق من مطابقة كلمات المرور
+    const password1 = document.getElementById('id_password1');
+    const password2 = document.getElementById('id_password2');
+    
+    function validatePasswords() {
+        if (password1.value && password2.value && password1.value !== password2.value) {
+            password2.style.borderColor = '#ef4444';
+        } else {
+            password2.style.borderColor = '#d1d5db';
+        }
+    }
+    
+    if (password1 && password2) {
+        password1.addEventListener('input', validatePasswords);
+        password2.addEventListener('input', validatePasswords);
+    }
+});
+</script>
+{% endblock %}
