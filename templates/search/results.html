@@ -259,13 +259,13 @@
                                     </div>
                                 </div>
                                 
-                                <!-- محتوى المنشور مع تظليل الكلمات المفتاحية -->
-                                <p class="mt-2">
-                                    {% highlight_text post.content query %}
-                                </p>
+                                <!-- محتوى المنشور مع تظليل الكلمات المفتاحية  <p class="mt-2">
+                                    % highlight_text post.content query %}
+                                </p>-->
+                               
                                 
-                                <!-- الهاشتاجات في المنشور -->
-                                {% with hashtags=post.content|extract_hashtags %}
+                                <!-- الهاشتاجات في المنشور                                 {% with hashtags=post.content|extract_hashtags-->
+
                                 {% if hashtags %}
                                 <div class="mt-2 flex flex-wrap">
                                     {% for hashtag in hashtags %}
@@ -275,8 +275,7 @@
                                     </a>
                                     {% endfor %}
                                 </div>
-                                {% endif %}
-                                {% endwith %}
+                                {% endif %}<!-- محتوى المنشور {% endwith %
                                 
                                 <!-- إحصائيات المنشور -->
                                 <div class="flex space-x-4 mt-3 text-gray-500 text-sm">

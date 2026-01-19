@@ -1,130 +1,174 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}أصدقاء @{{ profile_user.username }} - تويتر كلون{% endblock %}
+{% block title %}{{ page_title }} - تويتر كلون{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <!-- رأس الصفحة -->
+<div class="max-w-6xl mx-auto py-8 px-4">
+    <!-- عنوان الصفحة -->
     <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center">
-                <a href="{% url 'profile_with_username' profile_user.username %}" 
-                   class="text-blue-500 hover:text-blue-600 mr-4">
-                    <i class="fas fa-arrow-right text-xl"></i>
-                </a>
-                <h1 class="text-2xl font-bold">أصدقاء @{{ profile_user.username }}</h1>
-            </div>
-            <div class="flex space-x-4">
-                <a href="{% url 'friend_requests' %}" 
-                   class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
-                    <i class="fas fa-user-friends ml-2"></i> طلبات الصداقة
-                </a>
-                <a href="{% url 'suggested_friends' %}" 
-                   class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
-                    <i class="fas fa-user-plus ml-2"></i> اقتراحات أصدقاء
-                </a>
-            </div>
+        <h1 class="text-3xl font-bold text-gray-800">{{ page_title }}</h1>
+        <div class="flex space-x-4 mt-4">
+            <a href="{% url 'friends_list' %}" 
+               class="px-4 py-2 rounded-lg {% if request.path == '/friends/' %}bg-blue-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                الأصدقاء
+            </a>
+            <a href="{% url 'friend_requests' %}" 
+               class="px-4 py-2 rounded-lg {% if request.path == '/friends/requests/' %}bg-blue-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                طلبات الصداقة
+                {% if incoming_requests_count > 0 %}
+                <span class="bg-red-500 text-white text-xs rounded-full px-2 py-1 mr-1">
+                    {{ incoming_requests_count }}
+                </span>
+                {% endif %}
+            </a>
         </div>
-        <p class="text-gray-600">عدد الأصدقاء: {{ friends_count }}</p>
     </div>
     
-    <!-- قائمة الأصدقاء -->
+    <!-- الرسائل -->
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700
+                    {% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700
+                    {% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} 
+                    border px-4 py-3 rounded-lg mb-2">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- محتوى الصفحة -->
     <div class="bg-white rounded-lg shadow">
         {% if friends %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                {% for friend in friends %}
-                <div class="border rounded-lg p-4 hover:shadow-md transition">
-                    <div class="flex items-center mb-3">
+        <div class="divide-y">
+            {% for friend_data in friends %}
+            {% with friend_data.user as friend %}
+            <div class="p-6 hover:bg-gray-50 transition duration-150">
+                <div class="flex items-center justify-between">
+                    <!-- معلومات الصديق -->
+                    <div class="flex items-center space-x-4">
+                        <!-- الصورة الشخصية -->
                         <a href="{% url 'profile_with_username' friend.username %}">
                             {% if friend.profile_image %}
                                 <img src="{{ friend.profile_image.url }}" 
-                                     class="h-16 w-16 rounded-full object-cover border-2 border-blue-100">
+                                     class="h-16 w-16 rounded-full object-cover border-2 border-white shadow">
                             {% else %}
-                                <div class="h-16 w-16 rounded-full bg-gray-200 border-2 border-blue-100 flex items-center justify-center">
+                                <div class="h-16 w-16 rounded-full bg-gray-200 border-2 border-white shadow flex items-center justify-center">
                                     <i class="fas fa-user text-gray-400 text-2xl"></i>
                                 </div>
                             {% endif %}
                         </a>
-                        <div class="mr-3">
-                            <h3 class="font-bold">
-                                <a href="{% url 'profile_with_username' friend.username %}" 
-                                   class="hover:text-blue-500">
-                                    @{{ friend.username }}
-                                </a>
-                            </h3>
-                            <p class="text-gray-600 text-sm">
+                        
+                        <!-- معلومات المستخدم -->
+                        <div>
+                            <a href="{% url 'profile_with_username' friend.username %}" 
+                               class="font-bold text-lg hover:text-blue-500">
                                 {{ friend.first_name }} {{ friend.last_name }}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <!-- إحصائيات الصديق -->
-                    <div class="flex justify-between text-sm text-gray-500 mb-4">
-                        <div class="text-center">
-                            <p class="font-bold">{{ friend.posts.count }}</p>
-                            <p>تغريدة</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-bold">{{ friend.followers_count }}</p>
-                            <p>متابِع</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-bold">{{ friend.following_count }}</p>
-                            <p>متابَع</p>
+                            </a>
+                            <p class="text-gray-600">@{{ friend.username }}</p>
+                            
+                            {% if friend.bio %}
+                            <p class="text-gray-500 text-sm mt-1">{{ friend.bio|truncatechars:100 }}</p>
+                            {% endif %}
+                            
+                            <!-- آخر منشور -->
+                            {% if friend_data.last_post %}
+                            <div class="mt-2 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-sm text-gray-700">
+                                    <i class="fas fa-feather-alt ml-2 text-gray-400"></i>
+                                    {{ friend_data.last_post.content|truncatechars:80 }}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    {{ friend_data.last_post.created_at|timesince }}
+                                </p>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     
                     <!-- أزرار الإجراءات -->
-                    <div class="flex space-x-2">
-                        {% if is_own_profile %}
-                            <form method="POST" action="{% url 'remove_friend' friend.username %}"
-                                  onsubmit="return confirm('هل تريد إزالة هذا الصديق؟');">
-                                {% csrf_token %}
-                                <button type="submit" 
-                                        class="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm py-2 rounded-lg">
-                                    <i class="fas fa-user-times ml-1"></i> إزالة
-                                </button>
-                            </form>
-                            
-                            <a href="{% url 'profile_with_username' friend.username %}" 
-                               class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded-lg text-center">
-                                <i class="fas fa-eye ml-1"></i> عرض
-                            </a>
-                        {% else %}
-                            <a href="{% url 'profile_with_username' friend.username %}" 
-                               class="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded-lg text-center">
-                                <i class="fas fa-eye ml-1"></i> عرض الملف
-                            </a>
-                        {% endif %}
+                    <div class="flex space-x-3">
+                        <!-- زر الملف الشخصي -->
+                        <a href="{% url 'profile_with_username' friend.username %}" 
+                           class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+                            <i class="fas fa-user ml-2"></i> الملف
+                        </a>
+                        
+                        <!-- زر إزالة الصديق -->
+                        <form method="POST" action="{% url 'remove_friend' friend.username %}" 
+                              onsubmit="return confirm('هل أنت متأكد من إزالة هذا الصديق؟');">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                                <i class="fas fa-user-times ml-2"></i> إزالة
+                            </button>
+                        </form>
+                        
+                        <!-- زر الحظر -->
+                        <form method="POST" action="{% url 'block_user' friend.username %}" 
+                              onsubmit="return confirm('هل أنت متأكد من حظر هذا المستخدم؟');">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                <i class="fas fa-ban ml-2"></i> حظر
+                            </button>
+                        </form>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="p-8 text-center">
-                <i class="fas fa-user-friends text-gray-400 text-4xl mb-4"></i>
-                <p class="text-gray-600">لا يوجد أصدقاء بعد</p>
-                <p class="text-gray-500 text-sm mt-1 mb-4">
-                    {% if is_own_profile %}
-                    ابدأ بإضافة أصدقاء لمشاركة تجربتك معهم
-                    {% else %}
-                    @{{ profile_user.username }} ليس لديه أصدقاء بعد
-                    {% endif %}
-                </p>
-                {% if is_own_profile %}
-                <div class="space-x-4">
-                    <a href="{% url 'suggested_friends' %}" 
-                       class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg inline-block">
-                        <i class="fas fa-user-plus ml-2"></i> اكتشف أصدقاء جدد
-                    </a>
-                    <a href="{% url 'friend_requests' %}" 
-                       class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg inline-block">
-                        <i class="fas fa-user-check ml-2"></i> تفقد طلبات الصداقة
-                    </a>
+                
+                <!-- إحصائيات -->
+                <div class="flex space-x-6 mt-4 pt-4 border-t">
+                    <div class="text-center">
+                        <p class="font-bold">{{ friend.posts.count }}</p>
+                        <p class="text-gray-600 text-sm">التغريدات</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-bold">{{ friend.following_count }}</p>
+                        <p class="text-gray-600 text-sm">متابَعون</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-bold">{{ friend.followers_count }}</p>
+                        <p class="text-gray-600 text-sm">متابِعون</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-bold">
+                            {% if friend_data.is_following %}
+                            <span class="text-green-500">✓</span>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </p>
+                        <p class="text-gray-600 text-sm">متابَع</p>
+                    </div>
                 </div>
-                {% endif %}
             </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <i class="fas fa-users text-gray-400 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-600 mb-2">لا توجد أصدقاء بعد</h3>
+            <p class="text-gray-500 mb-6">ابحث عن مستخدمين وأرسل لهم طلبات صداقة</p>
+            <a href="{% url 'home' %}" 
+               class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">
+                <i class="fas fa-search ml-2"></i> ابحث عن مستخدمين
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>
+
+<style>
+/* تنسيقات إضافية */
+.transition {
+    transition: all 0.3s ease;
+}
+
+.hover\:bg-gray-50:hover {
+    background-color: #f9fafb;
+}
+</style>
 {% endblock %}

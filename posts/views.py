@@ -7,76 +7,119 @@ from .models import Post, Comment, Like
 from .forms import PostForm, CommentForm
 from accounts.models import CustomUser
 from friends.models import Follow
+ 
 
+ 
 
-
+#########""""
 from django.db.models import Q
+ 
+from django.core.paginator import Paginator
 
 @login_required
 def search_view(request):
     """صفحة البحث"""
     query = request.GET.get('q', '').strip()
-    results = {
-        'users': [],
-        'posts': [],
-        'hashtags': []
-    }
+    results = []
+    search_type = request.GET.get('type', 'all')
     
     if query:
-        # البحث عن المستخدمين
-        results['users'] = CustomUser.objects.filter(
-            Q(username__icontains=query) |
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(bio__icontains=query)
-        )[:10]
+        if search_type in ['all', 'posts']:
+            # البحث في المنشورات
+            posts_results = Post.objects.filter(
+                Q(content__icontains=query) | 
+                Q(user__username__icontains=query)
+            ).filter(is_deleted=False).order_by('-created_at')
+        else:
+            posts_results = Post.objects.none()
         
-        # البحث عن المنشورات
-        results['posts'] = Post.objects.filter(
-            Q(content__icontains=query)
-        ).select_related('user').order_by('-created_at')[:20]
+        if search_type in ['all', 'users']:
+            # البحث في المستخدمين
+            users_results = CustomUser.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(bio__icontains=query)
+            )
+        else:
+            users_results = CustomUser.objects.none()
         
-        # البحث عن الهاشتاجات (إذا بدأ البحث بـ #)
-        if query.startswith('#'):
-            hashtag = query[1:]  # إزالة #
-            results['posts'] = Post.objects.filter(
-                content__icontains=f'#{hashtag}'
-            ).select_related('user').order_by('-created_at')[:20]
+        # إضافة معلومات إضافية للنتائج
+        for post in posts_results:
+            post.result_type = 'post'
+            post.user_has_liked = Like.objects.filter(post=post, user=request.user).exists()
+            results.append(post)
+        
+        for user in users_results:
+            user.result_type = 'user'
+            # التحقق إذا كان المستخدم يتابع هذا المستخدم
+            user.is_following = Follow.objects.filter(
+                follower=request.user, 
+                following=user
+            ).exists()
+            results.append(user)
     
-    return render(request, 'search.html', {
+    # التصفيح
+    paginator = Paginator(results, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'posts/search.html', {
         'query': query,
-        'results': results,
-        'results_count': sum(len(v) for v in results.values())
+        'search_type': search_type,
+        'results': page_obj,
+        'page_obj': page_obj,
     })
 
-############################
-"""
+from django.http import JsonResponse
+
 @login_required
-def home_view(request):
-   
-    posts = Post.objects.all().order_by('-created_at')[:20]
-    
-    # إضافة بيانات لكل منشور
-    for post in posts:
-        post.user_has_liked = Like.objects.filter(post=post, user=request.user).exists()
-        post.comments = Comment.objects.filter(post=post, parent=None)[:5]
-        for comment in post.comments:
-            comment.user_has_liked = Like.objects.filter(comment=comment, user=request.user).exists()
-            comment.replies_count = Comment.objects.filter(parent=comment).count()
-    
-    # إحصائيات المستخدم
-    user_stats = {
-        'posts_count': Post.objects.filter(user=request.user).count(),
-        'following_count': Follow.objects.filter(follower=request.user).count(),
-        'followers_count': Follow.objects.filter(following=request.user).count(),
+def search_ajax(request):
+    """بحث AJAX للاقتراحات"""
+    query = request.GET.get('q', '').strip()
+    results = {
+        'users': [],
+        'posts': []
     }
     
-    return render(request, 'home.html', {
-        'posts': posts,
-        'user': request.user,
-        'user_stats': user_stats,
-    })
-"""
+    if query and len(query) >= 2:
+        # البحث في المستخدمين
+        users = CustomUser.objects.filter(
+            Q(username__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query)
+        )[:5]
+        
+        for user in users:
+            results['users'].append({
+                'id': user.id,
+                'username': user.username,
+                'profile_image': user.profile_image.url if user.profile_image else '',
+                'bio': user.bio[:50] if user.bio else ''
+            })
+        
+        # البحث في المنشورات
+        posts = Post.objects.filter(
+            Q(content__icontains=query)
+        ).filter(is_deleted=False).order_by('-created_at')[:5]
+        
+        for post in posts:
+            results['posts'].append({
+                'id': post.id,
+                'content': post.content[:100],
+                'username': post.user.username,
+                'created_at': post.created_at.strftime('%Y/%m/%d'),
+                'likes_count': post.likes_count,
+                'comments_count': post.comments_count
+            })
+    
+    return JsonResponse(results)
+
+
+#################"""
+ 
+############################
+ 
 ############
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -89,83 +132,41 @@ from accounts.models import CustomUser
 from friends.models import Follow
 
 @login_required
-def home_view(request):
-
+def home_view(request): 
     try:
-        # حاول استخدام is_deleted إذا كان موجوداً
         posts = Post.objects.filter(is_deleted=False).order_by('-created_at')[:20]
     except:
-        # إذا لم يكن الحقل موجوداً، استخدم جميع المنشورات
         posts = Post.objects.all().order_by('-created_at')[:20]
     
-    # الحصول على جميع التعليقات والـ likes دفعة واحدة لتحسين الأداء
-    post_ids = [post.id for post in posts]
-    
-    # الحصول على likes للمنشورات
-    post_likes = Like.objects.filter(
-        post_id__in=post_ids,
-        user=request.user
-    ).values_list('post_id', flat=True)
-    
-    post_likes_dict = {post_id: True for post_id in post_likes}
-    
-    # الحصول على التعليقات للمنشورات
-    comments = Comment.objects.filter(
-        post_id__in=post_ids,
-        parent=None
-    ).order_by('created_at')[:5]
-    
-    # تنظيم التعليقات حسب المنشور
-    comments_by_post = {}
-    for comment in comments:
-        if comment.post_id not in comments_by_post:
-            comments_by_post[comment.post_id] = []
-        comments_by_post[comment.post_id].append(comment)
-    
-    # الحصول على likes للتعليقات
-    comment_ids = [comment.id for comment in comments]
-    comment_likes = Like.objects.filter(
-        comment_id__in=comment_ids,
-        user=request.user
-    ).values_list('comment_id', flat=True)
-    
-    comment_likes_dict = {comment_id: True for comment_id in comment_likes}
-    
-    # إضافة بيانات لكل منشور
     for post in posts:
-        # إعجابات المنشور
-        post.user_has_liked = post.id in post_likes_dict
-        
-        # التعليقات
-        post.comments_list = comments_by_post.get(post.id, [])
-        
-        # إضافة بيانات للتعليقات
-        for comment in post.comments_list:
-            comment.user_has_liked = comment.id in comment_likes_dict
+        try:
+            post.user_has_liked = Like.objects.filter(post=post, user=request.user).exists()
+        except:
+            post.user_has_liked = False
+            
+        post.comments = Comment.objects.filter(post=post, parent=None)[:5]
+        for comment in post.comments:
+            try:
+                comment.user_has_liked = Like.objects.filter(comment=comment, user=request.user).exists()
+            except:
+                comment.user_has_liked = False
             comment.replies_count = Comment.objects.filter(parent=comment).count()
         
-        # صلاحيات التعديل والحذف
-        post.can_edit = post.can_edit(request.user) if hasattr(post, 'can_edit') else post.user == request.user
-        post.can_delete = post.can_delete(request.user) if hasattr(post, 'can_delete') else post.user == request.user or request.user.is_staff
+        post.can_edit = post.user == request.user
+        post.can_delete = post.user == request.user or request.user.is_staff
     
-    # إحصائيات المستخدم
-    try:
-        user_stats = {
-            'posts_count': Post.objects.filter(user=request.user, is_deleted=False).count(),
-            'following_count': Follow.objects.filter(follower=request.user).count(),
-            'followers_count': Follow.objects.filter(following=request.user).count(),
-        }
-    except:
-        user_stats = {
-            'posts_count': Post.objects.filter(user=request.user).count(),
-            'following_count': Follow.objects.filter(follower=request.user).count(),
-            'followers_count': Follow.objects.filter(following=request.user).count(),
-        }
+    user_stats = {
+        'posts_count': Post.objects.filter(user=request.user).count(),
+        'following_count': Follow.objects.filter(follower=request.user).count(),
+        'followers_count': Follow.objects.filter(following=request.user).count(),
+    }
     
+    # تأكد من أنك لا تمرر 'query' في context
     return render(request, 'home.html', {
         'posts': posts,
         'user': request.user,
         'user_stats': user_stats,
+        # لا تضيف 'query' هنا
     })
     
 #############
