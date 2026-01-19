@@ -1,3 +1,4 @@
+# updated settings.py
 #SECRET_KEY = 'django-insecure-z*^!%s&21pmrytr@wh#eo$9vv*b9g@6ocsw2w+99=a4!%n$$2^'
 
 import os
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'corsheaders',
+    'channels',
     
     # Local apps
     'accounts',
@@ -32,6 +34,7 @@ INSTALLED_APPS = [
     'posts',
     'friends',
     'notifications',
+    'search',
 ]
 
 MIDDLEWARE = [
@@ -60,6 +63,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                  'django.template.context_processors.media',   
                 'django.template.context_processors.static', 
+                'notifications.context_processors.unread_notifications_count',
             ],
              'builtins': [
                 'django.templatetags.static',  # هذا يسمح باستخدام {% static %} بدون load
@@ -69,6 +73,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'twitter_clone.wsgi.application'
+ASGI_APPLICATION = 'twitter_clone.asgi.application'
 
 DATABASES = {
     'default': {
@@ -100,7 +105,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
  
 
-
 # Create directories if they don't exist
 os.makedirs(os.path.join(BASE_DIR, 'static', 'images'), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, 'media', 'profile_pics'), exist_ok=True)
@@ -123,7 +127,7 @@ REST_FRAMEWORK = {
 }
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/' 
 LOGOUT_REDIRECT_URL = '/login/'
  
 from django.urls import reverse_lazy
@@ -162,3 +166,10 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# Channels layer (in-memory for development)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
